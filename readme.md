@@ -37,6 +37,36 @@ int main() {
 }
 ```
 
+### cu0::Process
+
+#### Get a representation of the current process
+
+`examples/example_cu0_process_current.cc`
+```c++
+#include <cu0/proc.hxx>
+
+int main() {
+  //! @note not supported on all platforms yet
+  //! @note thisProcess contains a representation of the current process
+  [[maybe_unused]] const auto thisProcess = cu0::Process::current();
+}
+```
+
+#### Get a process identifier
+
+`examples/example_cu0_process_pid.cc`
+```c++
+#include <cu0/proc.hxx>
+#include <iostream>
+
+int main() {
+  const auto thisProcess = cu0::Process::current();
+  //! @note pid contains value of the process identifier of the current process
+  const auto& pid = thisProcess.pid();
+  std::cout << "This process identifier: " << pid << '\n';
+}
+```
+
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first

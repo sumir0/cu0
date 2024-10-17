@@ -2,6 +2,7 @@
 #define CU0_CU0_HXX_
 
 #include <cu0/env.hxx>
+#include <cu0/proc.hxx>
 
 namespace cu0 {}
 
