@@ -1,4 +1,5 @@
 #include <cu0/proc.hxx>
+#include <iostream>
 
 //! @note supported features may vary on different platforms
 //! @note
@@ -20,7 +21,8 @@ int main() {}
 int main() {
   //! @note not supported on all platforms yet
   //! @note thisProcess contains a representation of the current process
-  [[maybe_unused]] const auto thisProcess = cu0::Process::current();
+  const auto thisProcess = cu0::Process::current();
+  std::cout << "Pid of this process: " << thisProcess.pid() << '\n';
 }
 
 #endif

@@ -39,6 +39,29 @@ int main() {
 
 ### cu0::Process
 
+#### Create a process
+
+`examples/example_cu0_process_create.cc`
+```c++
+#include <cu0/proc.hxx>
+
+int main() {
+  //! @note not supported on all platforms yet
+  //! @note executable can be run by a process
+  const auto executable = cu0::Executable{ .binary = "a.out" };
+  //! @note optional contains a process if it was created
+  const std::optional<cu0::Process> optional =
+      cu0::Process::create(executable);
+  if (!optional.has_value()) {
+    std::cout << "Error: No processes were created" << '\n';
+  } else {
+    //! @note createdProcess contains a representation of the running executable
+    const auto& createdProcess = *optional;
+    std::cout << "Pid of the created process: " << createdProcess.pid() << '\n';
+  }
+}
+```
+
 #### Get a representation of the current process
 
 `examples/example_cu0_process_current.cc`
@@ -48,7 +71,8 @@ int main() {
 int main() {
   //! @note not supported on all platforms yet
   //! @note thisProcess contains a representation of the current process
-  [[maybe_unused]] const auto thisProcess = cu0::Process::current();
+  const auto thisProcess = cu0::Process::current();
+  std::cout << "Pid of this process: " << thisProcess.pid() << '\n';
 }
 ```
 
