@@ -22,6 +22,13 @@ int main() {
   assert(uniqueExecutableInTheCurrentDirectory.arguments.empty());
   assert(uniqueExecutableInTheCurrentDirectory.environment.empty());
 
+  const auto uniqueExecutable = cu0::util::findBy(uniqueName);
+  assert(
+      uniqueExecutable.binary == std::filesystem::current_path() / uniqueName
+  );
+  assert(uniqueExecutable.arguments.empty());
+  assert(uniqueExecutable.environment.empty());
+
   std::filesystem::remove(uniqueName);
 
   const auto removedExecutableInTheCurrentDirectory =
@@ -29,6 +36,36 @@ int main() {
   assert(removedExecutableInTheCurrentDirectory.binary.empty());
   assert(removedExecutableInTheCurrentDirectory.arguments.empty());
   assert(removedExecutableInTheCurrentDirectory.environment.empty());
+
+  const auto removedExecutable = cu0::util::findBy(uniqueName);
+  assert(removedExecutable.binary.empty());
+  assert(uniqueExecutable.arguments.empty());
+  assert(uniqueExecutable.environment.empty());
+
+  const auto bin = std::filesystem::path{"/usr/bin"};
+  const auto path = cu0::EnvironmentVariable{"PATH"}.cachedValue();
+
+  const auto ls = bin / "ls";
+  if (
+      std::filesystem::exists(ls) &&
+      path.find(bin.string()) != std::string::npos
+  ) {
+    const auto lsExecutable = cu0::util::findBy(ls.filename());
+    assert(lsExecutable.binary == ls);
+    assert(lsExecutable.arguments.empty());
+    assert(lsExecutable.environment.empty());
+  }
+
+  const auto sh = bin / "sh";
+  if (
+      std::filesystem::exists(sh) &&
+      path.find(bin.string()) != std::string::npos
+  ) {
+    const auto shExecutable = cu0::util::findBy(sh.filename());
+    assert(shExecutable.binary == sh);
+    assert(shExecutable.arguments.empty());
+    assert(shExecutable.environment.empty());
+  }
 
   const auto executable = cu0::Executable{};
 

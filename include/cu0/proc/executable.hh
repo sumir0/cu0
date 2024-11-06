@@ -8,6 +8,8 @@
 #include <tuple>
 #include <vector>
 
+#include <cu0/env/environment_variable.hh>
+
 namespace cu0 {
 
 struct Executable {
@@ -17,6 +19,18 @@ struct Executable {
 };
 
 namespace util {
+
+/*!
+ * @brief finds an executable by a name
+ * @note searches in order:
+ *     the current directory,
+ *     the directories specified by the PATH environment variable
+ * @param name is the name of an executable
+ * @return executable with empty arguments and an empty environment
+ * @note if multiple executables are present with the specified name ->
+ *     the first found executable is returned
+ */
+Executable findBy(const std::string& name);
 
 /*!
  * @brief finds an executable by a name
@@ -55,6 +69,34 @@ std::tuple<std::unique_ptr<std::unique_ptr<char[]>[]>, std::size_t> envpOf(
 namespace cu0 {
 
 namespace util {
+
+inline Executable findBy(const std::string& name) {
+  auto candidate = findBy(name, std::filesystem::current_path());
+  if (!candidate.binary.empty()) {
+    return candidate;
+  }
+  auto pathsLeft = EnvironmentVariable{"PATH"}.cachedValue();
+  while (!pathsLeft.empty()) {
+#ifdef __unix__
+    const auto pos = pathsLeft.find(':');
+#else
+    const auto pos = pathsLeft.find(';');
+#endif
+    const auto path = pathsLeft.substr(0, pos);
+    if (pos == std::string::npos) {
+      pathsLeft = {};
+    } else {
+      pathsLeft.erase(0, pos + 1);
+    }
+    if (
+        std::filesystem::is_directory(path) &&
+        !(candidate = findBy(name, path)).binary.empty()
+    ) {
+      return candidate;
+    }
+  }
+  return {};
+}
 
 inline Executable findBy(
     const std::string& name,
