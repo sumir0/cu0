@@ -19,6 +19,17 @@ struct Executable {
 namespace util {
 
 /*!
+ * @brief finds an executable by a name
+ * @param name is the name of an executable
+ * @param directory is the directory where to look for an executable
+ * @return executable with empty arguments and an empty environment
+ */
+Executable findBy(
+    const std::string& name,
+    const std::filesystem::path& directory
+);
+
+/*!
  * @brief converts arguments of an executable to ptr<ptr<char[]>[]>
  * @param executable is the executable, arguments of which will be converted
  * @return tuple containing a ptr to an array and the size of that array
@@ -44,6 +55,18 @@ std::tuple<std::unique_ptr<std::unique_ptr<char[]>[]>, std::size_t> envpOf(
 namespace cu0 {
 
 namespace util {
+
+inline Executable findBy(
+    const std::string& name,
+    const std::filesystem::path& directory
+) {
+  for (const auto& it : std::filesystem::directory_iterator{directory}) {
+    if (it.path().filename() == name) {
+      return { .binary = it.path() };
+    }
+  }
+  return {};
+}
 
 inline std::tuple<std::unique_ptr<std::unique_ptr<char[]>[]>, std::size_t>
 argvOf(

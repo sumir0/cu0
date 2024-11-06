@@ -1,7 +1,34 @@
 #include <cu0/proc/executable.hh>
 #include <cassert>
+#include <filesystem>
+#include <fstream>
 
 int main() {
+
+  const auto name = std::string{"name"};
+  auto i = 0;
+  auto uniqueName = name;
+  while (std::filesystem::exists(uniqueName)) {
+    uniqueName = name + std::to_string(++i);
+  }
+  std::ofstream{uniqueName};
+
+  const auto uniqueExecutableInTheCurrentDirectory =
+      cu0::util::findBy(uniqueName, std::filesystem::current_path());
+  assert(
+      uniqueExecutableInTheCurrentDirectory.binary ==
+          std::filesystem::current_path() / uniqueName
+  );
+  assert(uniqueExecutableInTheCurrentDirectory.arguments.empty());
+  assert(uniqueExecutableInTheCurrentDirectory.environment.empty());
+
+  std::filesystem::remove(uniqueName);
+
+  const auto removedExecutableInTheCurrentDirectory =
+      cu0::util::findBy(uniqueName, std::filesystem::current_path());
+  assert(removedExecutableInTheCurrentDirectory.binary.empty());
+  assert(removedExecutableInTheCurrentDirectory.arguments.empty());
+  assert(removedExecutableInTheCurrentDirectory.environment.empty());
 
   const auto executable = cu0::Executable{};
 

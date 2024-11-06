@@ -37,6 +37,30 @@ int main() {
 }
 ```
 
+### cu0::Executable
+
+#### Find an executable by a name and a directory
+
+`examples/example_cu0_executable_find_by_name_and_directory.cc`
+```c++
+#include <cu0/proc/executable.hh>
+#include <filesystem>
+#include <iostream>
+
+int main() {
+  //! @note executable can be searched in a directory
+  const auto executable =
+      cu0::util::findBy("someExecutableName", std::filesystem::current_path());
+  //! @note if no executable is found then executable.binary is empty
+  if (executable.binary.empty()) {
+    std::cout << "Executable with the specified name was not found" << '\n';
+  } else {
+    //! @note if an executable is found then executable.binary is a path to it
+    std::cout << "Path to the executable: " << executable.binary << '\n';
+  }
+}
+```
+
 ### cu0::Process
 
 #### Create a process
