@@ -13,7 +13,7 @@
 int main() {}
 #else
 #if !__has_include(<unistd.h>)
-#warning <unistd.h> not found => \
+#warning <unistd.h> is not found => \
     cu0::Process::create() will not be used in this example
 int main() {}
 #else

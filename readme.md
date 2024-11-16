@@ -125,6 +125,30 @@ int main() {
 }
 ```
 
+#### Get the exit status code of a process
+
+`examples/example_cu0_process_exit_code.cc`
+```c++
+#include <cu0/proc.hxx>
+
+int main() {
+  const auto someProcess = cu0::Process::create(cu0::Executable{
+    .binary = "someExecutable"
+  });
+  if (!someProcess.has_value()) {
+    std::cout << "Error: the process was not created" << '\n';
+  }
+  //! @note not supported on all platforms yet
+  //! @note exit code contains exit status code of the created process
+  const auto exitCode = someProcess->exitCode();
+  if (!exitCode.has_value()) {
+    std::cout << "Error: the exit code was not obtained" << '\n';
+  } else {
+    std::cout << "Exit code of the created process: " << *exitCode << '\n';
+  }
+}
+```
+
 #### Get a process identifier
 
 `examples/example_cu0_process_pid.cc`
