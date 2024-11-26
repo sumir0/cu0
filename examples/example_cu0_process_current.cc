@@ -9,12 +9,12 @@
 //!         no feature-related compile-time warnings will be present
 #ifndef __unix__
 #warning __unix__ is not defined => \
-    cu0::Process::current() will not be used in this example
+    cu0::Process::current() will not be used in the example
 int main() {}
 #else
 #if !__has_include(<unistd.h>)
 #warning <unistd.h> is not found => \
-    cu0::Process::current() will not be used in this example
+    cu0::Process::current() will not be used in the example
 int main() {}
 #else
 

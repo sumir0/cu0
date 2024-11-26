@@ -150,15 +150,16 @@ int main() {
 #include <cu0/proc.hxx>
 
 int main() {
-  const auto someProcess = cu0::Process::create(cu0::Executable{
+  auto someProcess = cu0::Process::create(cu0::Executable{
     .binary = "someExecutable"
   });
   if (!someProcess.has_value()) {
     std::cout << "Error: the process was not created" << '\n';
   }
   //! @note not supported on all platforms yet
+  //! @note exit code can be obtained only after a call to the wait function
   //! @note exit code contains exit status code of the created process
-  const auto exitCode = someProcess->exitCode();
+  const auto exitCode = someProcess->wait().exitCode();
   if (!exitCode.has_value()) {
     std::cout << "Error: the exit code was not obtained" << '\n';
   } else {

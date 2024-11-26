@@ -1,9 +1,7 @@
 #ifndef CU0_PROCESS_HH_
 #define CU0_PROCESS_HH_
 
-#include <atomic>
 #include <optional>
-#include <thread>
 
 #include <cu0/proc/executable.hh>
 
@@ -22,12 +20,16 @@
 #if !__has_include(<sys/types.h>)
 #warning <sys/types.h> is not found => \
     cu0::Process::exitCode() will not be supported
+#warning <sys/types.h> is not found => \
+    cu0::Process::wait() will not be supported
 #else
 #include <sys/types.h>
 #endif
 #if !__has_include(<sys/wait.h>)
 #warning <sys/wait.h> is not found => \
     cu0::Process::exitCode() will not be supported
+#warning <sys/types.h> is not found => \
+    cu0::Process::wait() will not be supported
 #else
 #include <sys/wait.h>
 #endif
@@ -38,6 +40,8 @@
     cu0::Process::create() will not be supported
 #warning __unix__ is not defined => \
     cu0::Process::exitCode() will not be supported
+#warning __unix__ is not defined => \
+    cu0::Process::wait() will not be supported
 #endif
 
 namespace cu0 {
@@ -72,11 +76,7 @@ public:
   /*!
    * @brief destructs an instance
    */
-  ~Process();
-
-  Process(Process&& o);
-
-  Process& operator =(Process&& o);
+  virtual constexpr ~Process() = default;
   /*!
    * @brief accesses process identifier value
    * @return process identifier as a const reference
@@ -86,9 +86,20 @@ public:
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   /*!
    * @brief accesses exit status code
+   * @note exit status code will be empty until the process has been waited for
+   *     @see Process::wait()
    * @return copy of exit status code
    */
-  std::optional<int> exitCode() const;
+  constexpr const std::optional<int>& exitCode() const;
+#endif
+#endif
+#ifdef __unix__
+#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
+  /*!
+   * @brief waits for a process to exit
+   * @return mutable process
+   */
+  Process& wait();
 #endif
 #endif
 protected:
@@ -108,13 +119,9 @@ protected:
   unsigned pid_ = 0;
 #ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
-  //! flag to stop loop waiting for exit
-  std::atomic<bool> stopExitWaitLoop_ = false;
-  //! callback called after process termination
-  std::thread onExitCallback_ = {};
-  //! if terminated -> actual exit status code value
+  //! if waited -> actual exit status code value @see Process::wait()
   //! else -> empty exit status code value
-  std::atomic<std::optional<int>> exitCode_ = {};
+  std::optional<int> exitCode_ = {};
 #endif
 #endif
 private:
@@ -131,12 +138,6 @@ inline Process Process::current() {
   auto ret = Process{};
   //! set process identifier of the process
   ret.pid_ = getpid();
-#ifdef __unix__
-#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
-  //! set on exit callback
-  ret.onExitCallback_ = std::thread(&Process::waitExitLoop, &ret);
-#endif
-#endif
   //! return the process
   return ret;
 }
@@ -169,54 +170,28 @@ inline std::optional<Process> Process::create(const Executable& executable) {
     return {};
   }
   ret.pid_ = pid;
-  ret.onExitCallback_ = std::thread(&Process::waitExitLoop, &ret);
   return std::optional<Process>(std::move(ret));
 }
 #endif
 #endif
 
-inline Process::~Process() {
-#ifdef __unix__
-#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
-  if (this->onExitCallback_.joinable()) {
-    this->stopExitWaitLoop_ = true;
-    this->onExitCallback_.join();
-  }
-#endif
-#endif
-}
-
-inline Process::Process(Process&& o) {
-  *this = std::move(o);
-}
-
-inline Process& Process::operator =(Process&& o) {
-  if (this != &o) {
-    this->pid_ = std::move(o.pid_);
-#ifdef __unix__
-#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
-    this->stopExitWaitLoop_ = o.stopExitWaitLoop_.load();
-    if (o.onExitCallback_.joinable()) {
-      o.stopExitWaitLoop_ = true;
-      o.onExitCallback_.join();
-      this->onExitCallback_ = std::thread(&Process::waitExitLoop, this);
-    }
-    this->exitCode_ = o.exitCode_.load();
-#endif
-#endif
-  }
-  return *this;
-}
-
 constexpr const unsigned& Process::pid() const {
   return this->pid_;
 }
 
+#ifdef __unix__
+#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
+constexpr const std::optional<int>& Process::exitCode() const {
+  return this->exitCode_;
+}
+#endif
+#endif
 
 #ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
-inline std::optional<int> Process::exitCode() const {
-  return this->exitCode_.load();
+inline Process& Process::wait() {
+  this->waitExitLoop();
+  return *this;
 }
 #endif
 #endif
@@ -225,7 +200,7 @@ inline std::optional<int> Process::exitCode() const {
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
 inline void Process::waitExitLoop() {
   int status;
-  while (!this->stopExitWaitLoop_) {
+  while (true) {
     auto pid = waitpid(this->pid_, &status, WNOHANG);
     if (pid != 0) {
       if (pid != -1 && WIFEXITED(status) != 0) {
