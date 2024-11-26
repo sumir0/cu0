@@ -25,6 +25,11 @@ public:
    */
   EnvironmentVariable(const std::string& key);
   /*!
+   * @brief accesses key of the associated environment variable
+   * @return key as a const reference
+   */
+  constexpr const std::string& key() const;
+  /*!
    * @brief accesses cached value of the associated environment variable
    * @note cached value may not represent the associated environment variable if
    *     it was modified after the construction of this instance and
@@ -32,6 +37,12 @@ public:
    * @return cached value as a const reference
    */
   constexpr const std::string& cachedValue() const;
+  /*!
+   * @brief syncs cached value to the actual value of the
+   *     associated environment variable
+   * @return new cached value as a const reference
+   */
+  const std::string& sync();
 protected:
   /*!
    * @brief helper function to get value of an environment variable by a key
@@ -45,6 +56,8 @@ protected:
    * @brief constructor that may be used in inherited structs
    */
   constexpr EnvironmentVariable() = default;
+  //! key of the environment variable to associate this isntance with
+  std::string key_{};
   //! cached value of the associted environment variable
   std::string value_{};
 };
@@ -54,10 +67,20 @@ protected:
 namespace cu0 {
 
 inline EnvironmentVariable::EnvironmentVariable(const std::string& key)
-  : value_{EnvironmentVariable::getBy(key)} {}
+  : key_{key}
+  , value_{EnvironmentVariable::getBy(this->key_)}
+{}
+
+constexpr const std::string& EnvironmentVariable::key() const {
+  return this->key_;
+}
 
 constexpr const std::string& EnvironmentVariable::cachedValue() const {
   return this->value_;
+}
+
+inline const std::string& EnvironmentVariable::sync() {
+  return this->value_ = EnvironmentVariable::getBy(this->key_);
 }
 
 inline std::string EnvironmentVariable::getBy(const std::string& key) {
