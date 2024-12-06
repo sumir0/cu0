@@ -2,6 +2,7 @@
 #define CU0_PROCESS_HH_
 
 #include <optional>
+#include <sstream>
 
 #include <cu0/proc/executable.hh>
 
@@ -14,22 +15,24 @@
     cu0::Process::current() will not be supported
 #warning <unistd.h> is not found => \
     cu0::Process::create() will not be supported
+#warning <unistd.h> is not found => \
+    cu0::Process::stdout() will not be supported
 #else
 #include <unistd.h>
 #endif
 #if !__has_include(<sys/types.h>)
 #warning <sys/types.h> is not found => \
-    cu0::Process::exitCode() will not be supported
-#warning <sys/types.h> is not found => \
     cu0::Process::wait() will not be supported
+#warning <sys/types.h> is not found => \
+    cu0::Process::exitCode() will not be supported
 #else
 #include <sys/types.h>
 #endif
 #if !__has_include(<sys/wait.h>)
-#warning <sys/wait.h> is not found => \
-    cu0::Process::exitCode() will not be supported
 #warning <sys/types.h> is not found => \
     cu0::Process::wait() will not be supported
+#warning <sys/wait.h> is not found => \
+    cu0::Process::exitCode() will not be supported
 #else
 #include <sys/wait.h>
 #endif
@@ -39,9 +42,11 @@
 #warning __unix__ is not defined => \
     cu0::Process::create() will not be supported
 #warning __unix__ is not defined => \
-    cu0::Process::exitCode() will not be supported
-#warning __unix__ is not defined => \
     cu0::Process::wait() will not be supported
+#warning __unix__ is not defined => \
+    cu0::Process::exitCode() will not be supported
+#warning <unistd.h> is not found => \
+    cu0::Process::stdout() will not be supported
 #endif
 
 namespace cu0 {
@@ -85,6 +90,15 @@ public:
 #ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   /*!
+   * @brief waits for a process to exit
+   * @return mutable process
+   */
+  Process& wait();
+#endif
+#endif
+#ifdef __unix__
+#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
+  /*!
    * @brief accesses exit status code
    * @note exit status code will be empty until the process has been waited for
    *     @see Process::wait()
@@ -94,15 +108,26 @@ public:
 #endif
 #endif
 #ifdef __unix__
-#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
+#if __has_include(<unistd.h>)
   /*!
-   * @brief waits for a process to exit
-   * @return mutable process
+   * @brief stdout returns a copy of stdout
+   * @return stdout copy as a std::istringstream
    */
-  Process& wait();
+  std::istringstream stdout() const;
 #endif
 #endif
 protected:
+#ifdef __unix__
+#if __has_include(<unistd.h>)
+  /*!
+   * @brief stdout returns a copy of stdout
+   * @tparam BUFFER_SIZE is the buffer size for reading from pipe
+   * @return stdout copy as a std::istringstream
+   */
+  template <std::size_t BUFFER_SIZE>
+  static std::istringstream readFrom(const int& pipe);
+#endif
+#endif
   /*!
    * @brief constructs an instance with default values
    */
@@ -117,6 +142,8 @@ protected:
 #endif
   //! process identifier
   unsigned pid_ = 0;
+  //! stdout file descriptor
+  int stdoutPipe_ = 0;
 #ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   //! if waited -> actual exit status code value @see Process::wait()
@@ -158,18 +185,37 @@ inline std::optional<Process> Process::create(const Executable& executable) {
   for (auto i = 0; i < envpSize; i++) {
     envpRaw[i] = envp[i].get();
   }
+  int inFd[2];
+  int outFd[2];
+  int errFd[2];
+  pipe(inFd);
+  pipe(outFd);
+  pipe(errFd);
   const auto pid = vfork();
-  if (pid == 0) {
+  if (pid == 0) { //! forked process
+    close(inFd[1]);
+    close(outFd[0]);
+    close(errFd[0]);
+    dup2(inFd[0], 0);
+    dup2(outFd[1], 1);
+    dup2(errFd[1], 2);
+    close(inFd[0]);
+    close(outFd[1]);
+    close(errFd[1]);
     const auto execRet = execve(argvRaw[0], argvRaw.get(), envpRaw.get());
     if (execRet != 0) {
       //! fail
       exit(errno);
     }
   }
-  if (pid < 0) {
+  close(inFd[0]); //! @dev @note possible fail
+  close(outFd[1]);
+  close(errFd[1]);
+  if (pid < 0) { //! fork failed
     return {};
   }
   ret.pid_ = pid;
+  ret.stdoutPipe_ = outFd[0];
   return std::optional<Process>(std::move(ret));
 }
 #endif
@@ -181,6 +227,15 @@ constexpr const unsigned& Process::pid() const {
 
 #ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
+inline Process& Process::wait() {
+  this->waitExitLoop();
+  return *this;
+}
+#endif
+#endif
+
+#ifdef __unix__
+#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
 constexpr const std::optional<int>& Process::exitCode() const {
   return this->exitCode_;
 }
@@ -188,10 +243,30 @@ constexpr const std::optional<int>& Process::exitCode() const {
 #endif
 
 #ifdef __unix__
-#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
-inline Process& Process::wait() {
-  this->waitExitLoop();
-  return *this;
+#if __has_include(<unistd.h>)
+std::istringstream Process::stdout() const {
+  return Process::readFrom<1024>(this->stdoutPipe_);
+}
+#endif
+#endif
+
+#ifdef __unix__
+#if __has_include(<unistd.h>)
+template <std::size_t BUFFER_SIZE>
+std::istringstream Process::readFrom(const int& pipe) {
+  auto oss = std::ostringstream{};
+  ssize_t bytes;
+  do {
+    char buffer[BUFFER_SIZE];
+    static_assert(BUFFER_SIZE > 1, "BUFFER_SIZE needs to have space for '\0'");
+    bytes = read(pipe, buffer, BUFFER_SIZE - 1);
+    if (bytes < 0) { //! read failed
+      return {};
+    }
+    buffer[bytes] = '\0';
+    oss << std::move(buffer);
+  } while (bytes == BUFFER_SIZE - 1);
+  return std::istringstream{oss.str()};
 }
 #endif
 #endif

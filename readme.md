@@ -168,18 +168,29 @@ int main() {
 }
 ```
 
-#### Get a process identifier
+#### Get stdout of a process
 
-`examples/example_cu0_process_pid.cc`
+`examples/example_cu0_process_stdout.cc`
 ```c++
 #include <cu0/proc.hxx>
 #include <iostream>
 
 int main() {
-  const auto thisProcess = cu0::Process::current();
-  //! @note pid contains value of the process identifier of the current process
-  const auto& pid = thisProcess.pid();
-  std::cout << "This process identifier: " << pid << '\n';
+  auto someProcess = cu0::Process::create(cu0::Executable{
+    .binary = "someExecutable"
+  });
+  if (!someProcess.has_value()) {
+    std::cout << "Error: the process was not created" << '\n';
+  }
+  //! @note not supported on all platforms yet
+  //! @note stdout contains standard output of the created process
+  //!     at the moment of call
+  const auto output = someProcess->stdout();
+  if (output.str().empty()) {
+    std::cout << "Stdout of the created process is empty" << '\n';
+  } else {
+    std::cout << "Stdout of the created process: " << output.str() << '\n';
+  }
 }
 ```
 
