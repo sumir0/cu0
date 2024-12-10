@@ -168,7 +168,7 @@ int main() {
 }
 ```
 
-#### Get stdout of a process
+#### Get stdout (stderr) of a process
 
 `examples/example_cu0_process_stdout.cc`
 ```c++

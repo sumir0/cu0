@@ -17,6 +17,8 @@
     cu0::Process::create() will not be supported
 #warning <unistd.h> is not found => \
     cu0::Process::stdout() will not be supported
+#warning <unistd.h> is not found => \
+    cu0::Process::stderr() will not be supported
 #else
 #include <unistd.h>
 #endif
@@ -47,6 +49,8 @@
     cu0::Process::exitCode() will not be supported
 #warning <unistd.h> is not found => \
     cu0::Process::stdout() will not be supported
+#warning <unistd.h> is not found => \
+    cu0::Process::stderr() will not be supported
 #endif
 
 namespace cu0 {
@@ -116,6 +120,15 @@ public:
   std::istringstream stdout() const;
 #endif
 #endif
+#ifdef __unix__
+#if __has_include(<unistd.h>)
+  /*!
+   * @brief stderr returns a copy of stderr
+   * @return stderr copy as a std::istringstream
+   */
+  std::istringstream stderr() const;
+#endif
+#endif
 protected:
 #ifdef __unix__
 #if __has_include(<unistd.h>)
@@ -143,7 +156,9 @@ protected:
   //! process identifier
   unsigned pid_ = 0;
   //! stdout file descriptor
-  int stdoutPipe_ = 0;
+  int stdoutPipe_ = -1;
+  //! stderr file descriptor
+  int stderrPipe_ = -1;
 #ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   //! if waited -> actual exit status code value @see Process::wait()
@@ -163,8 +178,14 @@ namespace cu0 {
 inline Process Process::current() {
   //! construct a process with default values
   auto ret = Process{};
-  //! set process identifier of the process
+  //! set process identifier
   ret.pid_ = getpid();
+  //! reading stdout of the same process is strange -> set stdout pipe to -1
+  //! there will be an empty string value if stdout is tried to be read
+  ret.stdoutPipe_ = -1;
+  //! reading stderr of the same process is strange -> set stderr pipe to -1
+  //! there will be an empty string value if stderr is tried to be read
+  ret.stderrPipe_ = -1;
   //! return the process
   return ret;
 }
@@ -196,9 +217,9 @@ inline std::optional<Process> Process::create(const Executable& executable) {
     close(inFd[1]);
     close(outFd[0]);
     close(errFd[0]);
-    dup2(inFd[0], 0);
-    dup2(outFd[1], 1);
-    dup2(errFd[1], 2);
+    dup2(inFd[0], STDIN_FILENO);
+    dup2(outFd[1], STDOUT_FILENO);
+    dup2(errFd[1], STDERR_FILENO);
     close(inFd[0]);
     close(outFd[1]);
     close(errFd[1]);
@@ -216,6 +237,7 @@ inline std::optional<Process> Process::create(const Executable& executable) {
   }
   ret.pid_ = pid;
   ret.stdoutPipe_ = outFd[0];
+  ret.stderrPipe_ = errFd[0];
   return std::optional<Process>(std::move(ret));
 }
 #endif
@@ -246,6 +268,14 @@ constexpr const std::optional<int>& Process::exitCode() const {
 #if __has_include(<unistd.h>)
 std::istringstream Process::stdout() const {
   return Process::readFrom<1024>(this->stdoutPipe_);
+}
+#endif
+#endif
+
+#ifdef __unix__
+#if __has_include(<unistd.h>)
+std::istringstream Process::stderr() const {
+  return Process::readFrom<1024>(this->stderrPipe_);
 }
 #endif
 #endif

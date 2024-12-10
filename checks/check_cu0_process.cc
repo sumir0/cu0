@@ -66,6 +66,7 @@ int main(int argc, char** argv) {
   //! for subprocess check
   if (argc > 1) {
     std::cout << argv[1];
+    std::cerr << argv[1] << argv[1];
     return std::stoi(argv[1]);
   }
 
@@ -155,8 +156,17 @@ int main(int argc, char** argv) {
 
 #ifdef __unix__
 #if __has_include(<unistd.h>)
+  std::cout << thisProcess.pid();
+  std::cout.flush();
+  assert(thisProcess.stdout().str().empty());
+  std::cerr << thisProcess.pid() << thisProcess.pid();
+  std::cerr.flush();
+  assert(thisProcess.stderr().str().empty());
+
   assert(processWithExitCodeZero->stdout().str() == "0");
+  assert(processWithExitCodeZero->stderr().str() == "00");
   assert(processWithExitCodeOne->stdout().str() == "1");
+  assert(processWithExitCodeOne->stderr().str() == "11");
 
   struct ProcessReadFromCheck : public cu0::Process {
     using cu0::Process::readFrom;
