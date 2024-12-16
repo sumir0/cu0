@@ -65,6 +65,13 @@ int main(int argc, char** argv) {
 
   //! for subprocess check
   if (argc > 1) {
+    if (std::string{argv[1]} == "64") {
+      std::string input;
+      std::cin >> input;
+      std::cout << input;
+      std::cerr << input << input;
+      return std::stoi(argv[1]);
+    }
     std::cout << argv[1];
     std::cerr << argv[1] << argv[1];
     return std::stoi(argv[1]);
@@ -156,23 +163,140 @@ int main(int argc, char** argv) {
 
 #ifdef __unix__
 #if __has_include(<unistd.h>)
+  struct ProcessWriteIntoCheck : public cu0::Process {
+    using cu0::Process::writeInto;
+    ProcessWriteIntoCheck(cu0::Process&& process)
+      : cu0::Process{std::move(process)} {}
+    constexpr const int& stdinPipe() const {
+      return this->stdinPipe_;
+    }
+  };
+  {
+    const auto executableWithExitCode64 = cu0::Executable{
+      .binary = argv[0],
+      .arguments = {"64"},
+    };
+    auto processWithExitCode64 =
+        cu0::Process::create(executableWithExitCode64);
+    assert(processWithExitCode64.has_value());
+    auto processWriteIntoCheck =
+        ProcessWriteIntoCheck{std::move(*processWithExitCode64)};
+    const auto& pipe = processWriteIntoCheck.stdinPipe();
+    ProcessWriteIntoCheck::writeInto<2>(pipe, "333\r\n");
+    processWriteIntoCheck.wait();
+    assert(processWriteIntoCheck.exitCode().value() == 64);
+    assert(processWriteIntoCheck.stdout() == "333");
+    assert(processWriteIntoCheck.stderr() == "333333");
+  }
+  {
+    const auto executableWithExitCode64 = cu0::Executable{
+      .binary = argv[0],
+      .arguments = {"64"},
+    };
+    auto processWithExitCode64 =
+        cu0::Process::create(executableWithExitCode64);
+    assert(processWithExitCode64.has_value());
+    auto processWriteIntoCheck =
+        ProcessWriteIntoCheck{std::move(*processWithExitCode64)};
+    const auto& pipe = processWriteIntoCheck.stdinPipe();
+    ProcessWriteIntoCheck::writeInto<3>(pipe, "333\r\n");
+    processWriteIntoCheck.wait();
+    assert(processWriteIntoCheck.exitCode().value() == 64);
+    assert(processWriteIntoCheck.stdout() == "333");
+    assert(processWriteIntoCheck.stderr() == "333333");
+  }
+  {
+    const auto executableWithExitCode64 = cu0::Executable{
+      .binary = argv[0],
+      .arguments = {"64"},
+    };
+    auto processWithExitCode64 =
+        cu0::Process::create(executableWithExitCode64);
+    assert(processWithExitCode64.has_value());
+    auto processWriteIntoCheck =
+        ProcessWriteIntoCheck{std::move(*processWithExitCode64)};
+    const auto& pipe = processWriteIntoCheck.stdinPipe();
+    ProcessWriteIntoCheck::writeInto<4>(pipe, "333\r\n");
+    processWriteIntoCheck.wait();
+    assert(processWriteIntoCheck.exitCode().value() == 64);
+    assert(processWriteIntoCheck.stdout() == "333");
+    assert(processWriteIntoCheck.stderr() == "333333");
+  }
+  {
+    const auto executableWithExitCode64 = cu0::Executable{
+      .binary = argv[0],
+      .arguments = {"64"},
+    };
+    auto processWithExitCode64 =
+        cu0::Process::create(executableWithExitCode64);
+    assert(processWithExitCode64.has_value());
+    auto processWriteIntoCheck =
+        ProcessWriteIntoCheck{std::move(*processWithExitCode64)};
+    const auto& pipe = processWriteIntoCheck.stdinPipe();
+    ProcessWriteIntoCheck::writeInto<1024>(pipe, "333\r\n");
+    processWriteIntoCheck.wait();
+    assert(processWriteIntoCheck.exitCode().value() == 64);
+    assert(processWriteIntoCheck.stdout() == "333");
+    assert(processWriteIntoCheck.stderr() == "333333");
+  }
+  {
+    const auto executableWithExitCode64 = cu0::Executable{
+      .binary = argv[0],
+      .arguments = {"64"},
+    };
+    auto processWithExitCode64 =
+        cu0::Process::create(executableWithExitCode64);
+    assert(processWithExitCode64.has_value());
+    auto processWriteIntoCheck =
+        ProcessWriteIntoCheck{std::move(*processWithExitCode64)};
+    const auto& pipe = processWriteIntoCheck.stdinPipe();
+    ProcessWriteIntoCheck::writeInto<8192>(pipe, "333\r\n");
+    processWriteIntoCheck.wait();
+    assert(processWriteIntoCheck.exitCode().value() == 64);
+    assert(processWriteIntoCheck.stdout() == "333");
+    assert(processWriteIntoCheck.stderr() == "333333");
+  }
+  {
+    const auto executableWithExitCode64 = cu0::Executable{
+      .binary = argv[0],
+      .arguments = {"64"},
+    };
+    auto processWithExitCode64 =
+        cu0::Process::create(executableWithExitCode64);
+    assert(processWithExitCode64.has_value());
+    processWithExitCode64->stdin("64\r\n");
+    processWithExitCode64->wait();
+    assert(processWithExitCode64->exitCode().value() == 64);
+    assert(processWithExitCode64->stdout() == "64");
+    assert(processWithExitCode64->stderr() == "6464");
+  }
+#else
+#warning <unistd.h> is not found => \
+    cu0::Process::stdin() will not be checked
+#endif
+#else
+#warning __unix__ is not defined => cu0::Process::stdin() will not be checked
+#endif
+
+#ifdef __unix__
+#if __has_include(<unistd.h>)
   std::cout << thisProcess.pid();
   std::cout.flush();
-  assert(thisProcess.stdout().str().empty());
+  assert(thisProcess.stdout().empty());
   std::cerr << thisProcess.pid() << thisProcess.pid();
   std::cerr.flush();
-  assert(thisProcess.stderr().str().empty());
+  assert(thisProcess.stderr().empty());
 
-  assert(processWithExitCodeZero->stdout().str() == "0");
-  assert(processWithExitCodeZero->stderr().str() == "00");
-  assert(processWithExitCodeOne->stdout().str() == "1");
-  assert(processWithExitCodeOne->stderr().str() == "11");
+  assert(processWithExitCodeZero->stdout() == "0");
+  assert(processWithExitCodeZero->stderr() == "00");
+  assert(processWithExitCodeOne->stdout() == "1");
+  assert(processWithExitCodeOne->stderr() == "11");
 
   struct ProcessReadFromCheck : public cu0::Process {
     using cu0::Process::readFrom;
     ProcessReadFromCheck(cu0::Process&& process)
       : cu0::Process{std::move(process)} {}
-    constexpr const int& stdoutPipe() {
+    constexpr const int& stdoutPipe() const {
       return this->stdoutPipe_;
     }
   };
@@ -186,9 +310,10 @@ int main(int argc, char** argv) {
     assert(processWithExitCode255.has_value());
     processWithExitCode255->wait();
     assert(processWithExitCode255->exitCode().value() == 255);
-    const auto& pipe =
-        ProcessReadFromCheck{std::move(*processWithExitCode255)}.stdoutPipe();
-    assert(ProcessReadFromCheck::readFrom<2>(pipe).str() == "255");
+    const auto& processReadFromCheck =
+        ProcessReadFromCheck{std::move(*processWithExitCode255)};
+    const auto& pipe = processReadFromCheck.stdoutPipe();
+    assert(ProcessReadFromCheck::readFrom<2>(pipe) == "255");
   }
   {
     const auto executableWithExitCode255 = cu0::Executable{
@@ -200,9 +325,10 @@ int main(int argc, char** argv) {
     assert(processWithExitCode255.has_value());
     processWithExitCode255->wait();
     assert(processWithExitCode255->exitCode().value() == 255);
-    const auto& pipe =
-        ProcessReadFromCheck{std::move(*processWithExitCode255)}.stdoutPipe();
-    assert(ProcessReadFromCheck::readFrom<3>(pipe).str() == "255");
+    const auto& processReadFromCheck =
+        ProcessReadFromCheck{std::move(*processWithExitCode255)};
+    const auto& pipe = processReadFromCheck.stdoutPipe();
+    assert(ProcessReadFromCheck::readFrom<3>(pipe) == "255");
   }
   {
     const auto executableWithExitCode255 = cu0::Executable{
@@ -214,9 +340,10 @@ int main(int argc, char** argv) {
     assert(processWithExitCode255.has_value());
     processWithExitCode255->wait();
     assert(processWithExitCode255->exitCode().value() == 255);
-    const auto& pipe =
-        ProcessReadFromCheck{std::move(*processWithExitCode255)}.stdoutPipe();
-    assert(ProcessReadFromCheck::readFrom<4>(pipe).str() == "255");
+    const auto& processReadFromCheck =
+        ProcessReadFromCheck{std::move(*processWithExitCode255)};
+    const auto& pipe = processReadFromCheck.stdoutPipe();
+    assert(ProcessReadFromCheck::readFrom<4>(pipe) == "255");
   }
   {
     const auto executableWithExitCode255 = cu0::Executable{
@@ -228,9 +355,10 @@ int main(int argc, char** argv) {
     assert(processWithExitCode255.has_value());
     processWithExitCode255->wait();
     assert(processWithExitCode255->exitCode().value() == 255);
-    const auto& pipe =
-        ProcessReadFromCheck{std::move(*processWithExitCode255)}.stdoutPipe();
-    assert(ProcessReadFromCheck::readFrom<1024>(pipe).str() == "255");
+    const auto& processReadFromCheck =
+        ProcessReadFromCheck{std::move(*processWithExitCode255)};
+    const auto& pipe = processReadFromCheck.stdoutPipe();
+    assert(ProcessReadFromCheck::readFrom<1024>(pipe) == "255");
   }
   {
     const auto executableWithExitCode255 = cu0::Executable{
@@ -242,16 +370,20 @@ int main(int argc, char** argv) {
     assert(processWithExitCode255.has_value());
     processWithExitCode255->wait();
     assert(processWithExitCode255->exitCode().value() == 255);
-    const auto& pipe =
-        ProcessReadFromCheck{std::move(*processWithExitCode255)}.stdoutPipe();
-    assert(ProcessReadFromCheck::readFrom<8192>(pipe).str() == "255");
+    const auto& processReadFromCheck =
+        ProcessReadFromCheck{std::move(*processWithExitCode255)};
+    const auto& pipe = processReadFromCheck.stdoutPipe();
+    assert(ProcessReadFromCheck::readFrom<8192>(pipe) == "255");
   }
 #else
 #warning <unistd.h> is not found => \
     cu0::Process::stdout() will not be checked
+#warning <unistd.h> is not found => \
+    cu0::Process::stderr() will not be checked
 #endif
 #else
 #warning __unix__ is not defined => cu0::Process::stdout() will not be checked
+#warning __unix__ is not defined => cu0::Process::stderr() will not be checked
 #endif
 
   return 0;

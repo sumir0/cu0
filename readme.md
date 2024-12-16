@@ -176,7 +176,7 @@ int main() {
 #include <iostream>
 
 int main() {
-  auto someProcess = cu0::Process::create(cu0::Executable{
+  const auto someProcess = cu0::Process::create(cu0::Executable{
     .binary = "someExecutable"
   });
   if (!someProcess.has_value()) {
@@ -186,11 +186,31 @@ int main() {
   //! @note stdout contains standard output of the created process
   //!     at the moment of call
   const auto output = someProcess->stdout();
-  if (output.str().empty()) {
+  if (output.empty()) {
     std::cout << "Stdout of the created process is empty" << '\n';
   } else {
-    std::cout << "Stdout of the created process: " << output.str() << '\n';
+    std::cout << "Stdout of the created process: " << output << '\n';
   }
+}
+```
+
+#### Pass data to stdin of a process
+
+`examples/example_cu0_process_stdin.cc`
+```c++
+#include <cu0/proc.hxx>
+#include <iostream>
+
+int main() {
+  const auto someProcess = cu0::Process::create(cu0::Executable{
+    .binary = "someExecutable"
+  });
+  if (!someProcess.has_value()) {
+    std::cout << "Error: the process was not created" << '\n';
+  }
+  //! @note not supported on all platforms yet
+  //! @note stdin passes an input to the stdin of the process
+  someProcess->stdin("someInput");
 }
 ```
 

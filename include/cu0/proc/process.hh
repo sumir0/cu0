@@ -6,6 +6,8 @@
 
 #include <cu0/proc/executable.hh>
 
+#include <iostream>
+
 /*!
  * @brief checks software compatibility during compile-time
  */
@@ -15,6 +17,8 @@
     cu0::Process::current() will not be supported
 #warning <unistd.h> is not found => \
     cu0::Process::create() will not be supported
+#warning <unistd.h> is not found => \
+    cu0::Process::stdin() will not be supported
 #warning <unistd.h> is not found => \
     cu0::Process::stdout() will not be supported
 #warning <unistd.h> is not found => \
@@ -48,6 +52,8 @@
 #warning __unix__ is not defined => \
     cu0::Process::exitCode() will not be supported
 #warning <unistd.h> is not found => \
+    cu0::Process::stdin() will not be supported
+#warning <unistd.h> is not found => \
     cu0::Process::stdout() will not be supported
 #warning <unistd.h> is not found => \
     cu0::Process::stderr() will not be supported
@@ -65,6 +71,9 @@ public:
   /*!
    * @brief constructs an instance using the current process in which
    *     this function is called
+   * @note for the returned current process
+   *     stdin(), stdout(), stderr() member functions are not supported yet
+   *     @see implementation details
    * @return current process
    */
   [[nodiscard]] static Process current();
@@ -85,7 +94,20 @@ public:
   /*!
    * @brief destructs an instance
    */
-  virtual constexpr ~Process() = default;
+  virtual ~Process();
+  constexpr Process(const Process& other) = delete;
+  constexpr Process& operator =(const Process& other) = delete;
+  /*!
+   * @brief moves the specified process resources to this process
+   * @param other is the process to be moved
+   */
+  constexpr Process(Process&& other);
+  /*!
+   * @brief moves the specified process resources to this process
+   * @param other is the process to be moved
+   * @return this process as mutable reference
+   */
+  constexpr Process& operator =(Process&& other);
   /*!
    * @brief accesses process identifier value
    * @return process identifier as a const reference
@@ -114,37 +136,64 @@ public:
 #ifdef __unix__
 #if __has_include(<unistd.h>)
   /*!
-   * @brief stdout returns a copy of stdout
-   * @return stdout copy as a std::istringstream
+   * @brief stdin passes the specified input to the stdin
+   * @param input is the input value
    */
-  std::istringstream stdout() const;
+  void stdin(const std::string& input) const;
 #endif
 #endif
 #ifdef __unix__
 #if __has_include(<unistd.h>)
   /*!
-   * @brief stderr returns a copy of stderr
-   * @return stderr copy as a std::istringstream
+   * @brief stdout returns the value of the stdout
+   * @return stdout as a std::string
    */
-  std::istringstream stderr() const;
+  std::string stdout() const;
+#endif
+#endif
+#ifdef __unix__
+#if __has_include(<unistd.h>)
+  /*!
+   * @brief stderr returns the value of the stderr
+   * @return stderr as a std::string
+   */
+  std::string stderr() const;
 #endif
 #endif
 protected:
 #ifdef __unix__
 #if __has_include(<unistd.h>)
   /*!
-   * @brief stdout returns a copy of stdout
-   * @tparam BUFFER_SIZE is the buffer size for reading from pipe
-   * @return stdout copy as a std::istringstream
+   * @brief writeInto writes the specified input into the specified pipe
+   * @tparam BUFFER_SIZE is the buffer size for writing into the pipe
+   * @param pipe is the pipe to write into
+   * @param input is the data to write
    */
   template <std::size_t BUFFER_SIZE>
-  static std::istringstream readFrom(const int& pipe);
+  static void writeInto(const int& pipe, const std::string& input);
+#endif
+#endif
+#ifdef __unix__
+#if __has_include(<unistd.h>)
+  /*!
+   * @brief readFrom reads from the specified pipe
+   * @tparam BUFFER_SIZE is the buffer size for reading from the pipe
+   * @param pipe is the pipe to read from
+   * @return read value as a std::string
+   */
+  template <std::size_t BUFFER_SIZE>
+  static std::string readFrom(const int& pipe);
 #endif
 #endif
   /*!
    * @brief constructs an instance with default values
    */
   constexpr Process() = default;
+  /*!
+   * @brief swaps two processes
+   * @param other is the process to swap this process with
+   */
+  constexpr void swap(Process&& other);
 #ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   /*!
@@ -155,6 +204,8 @@ protected:
 #endif
   //! process identifier
   unsigned pid_ = 0;
+  //! stdin file descriptor
+  int stdinPipe_ = -1;
   //! stdout file descriptor
   int stdoutPipe_ = -1;
   //! stderr file descriptor
@@ -180,11 +231,17 @@ inline Process Process::current() {
   auto ret = Process{};
   //! set process identifier
   ret.pid_ = getpid();
-  //! reading stdout of the same process is strange -> set stdout pipe to -1
-  //! there will be an empty string value if stdout is tried to be read
+  //! writing to stdin of the same process is not supported yet ->
+  //!     set stdin pipe to -1
+  //! there will be no effect if stdin() is tried to be called
+  ret.stdinPipe_ = -1;
+  //! reading from stdout of the same process is not supported yet ->
+  //!     set stdout pipe to -1
+  //! there will be an empty string value if stdout() is tried to be called
   ret.stdoutPipe_ = -1;
-  //! reading stderr of the same process is strange -> set stderr pipe to -1
-  //! there will be an empty string value if stderr is tried to be read
+  //! reading stderr of the same process is not supported yet ->
+  //!     set stderr pipe to -1
+  //! there will be an empty string value if stderr() is tried to be called
   ret.stderrPipe_ = -1;
   //! return the process
   return ret;
@@ -195,7 +252,6 @@ inline Process Process::current() {
 #ifdef __unix__
 #if __has_include(<unistd.h>)
 inline std::optional<Process> Process::create(const Executable& executable) {
-  auto ret = Process{};
   const auto [argv, argvSize] = util::argvOf(executable);
   const auto [envp, envpSize] = util::envpOf(executable);
   auto argvRaw = std::make_unique<char*[]>(argvSize);
@@ -229,19 +285,42 @@ inline std::optional<Process> Process::create(const Executable& executable) {
       exit(errno);
     }
   }
-  close(inFd[0]); //! @dev @note possible fail
+  close(inFd[0]);
   close(outFd[1]);
   close(errFd[1]);
   if (pid < 0) { //! fork failed
     return {};
   }
-  ret.pid_ = pid;
-  ret.stdoutPipe_ = outFd[0];
-  ret.stderrPipe_ = errFd[0];
-  return std::optional<Process>(std::move(ret));
+  auto process = Process{};
+  process.pid_ = pid;
+  process.stdinPipe_ = inFd[1];
+  process.stdoutPipe_ = outFd[0];
+  process.stderrPipe_ = errFd[0];
+  return std::optional<Process>(std::move(process));;
 }
 #endif
 #endif
+
+inline Process::~Process() {
+#ifdef __unix__
+#if __has_include(<unistd.h>)
+  close(this->stdinPipe_);
+  close(this->stdoutPipe_);
+  close(this->stderrPipe_);
+#endif
+#endif
+}
+
+constexpr Process::Process(Process&& other) {
+  this->swap(std::move(other));
+}
+
+constexpr Process& Process::operator =(Process&& other) {
+  if (this != &other) {
+    this->swap(std::move(other));
+  }
+  return *this;
+}
 
 constexpr const unsigned& Process::pid() const {
   return this->pid_;
@@ -266,7 +345,15 @@ constexpr const std::optional<int>& Process::exitCode() const {
 
 #ifdef __unix__
 #if __has_include(<unistd.h>)
-std::istringstream Process::stdout() const {
+inline void Process::stdin(const std::string& input) const {
+  Process::writeInto<1024>(this->stdinPipe_, input);
+}
+#endif
+#endif
+
+#ifdef __unix__
+#if __has_include(<unistd.h>)
+inline std::string Process::stdout() const {
   return Process::readFrom<1024>(this->stdoutPipe_);
 }
 #endif
@@ -274,7 +361,7 @@ std::istringstream Process::stdout() const {
 
 #ifdef __unix__
 #if __has_include(<unistd.h>)
-std::istringstream Process::stderr() const {
+inline std::string Process::stderr() const {
   return Process::readFrom<1024>(this->stderrPipe_);
 }
 #endif
@@ -283,7 +370,29 @@ std::istringstream Process::stderr() const {
 #ifdef __unix__
 #if __has_include(<unistd.h>)
 template <std::size_t BUFFER_SIZE>
-std::istringstream Process::readFrom(const int& pipe) {
+void Process::writeInto(const int& pipe, const std::string& input) {
+  char buffer[BUFFER_SIZE];
+  for (auto i = 0; i <= input.size() / BUFFER_SIZE; i++) {
+    const auto data = input.substr(i * BUFFER_SIZE, BUFFER_SIZE);
+    std::size_t end;
+    if (data.size() != BUFFER_SIZE) {
+      end = data.size();
+    } else {
+      end = BUFFER_SIZE;
+    }
+    for (auto j = 0; j < end; j++) {
+      buffer[j] = data[j];
+    }
+    write(pipe, buffer, end); //! no error handling
+  }
+}
+#endif
+#endif
+
+#ifdef __unix__
+#if __has_include(<unistd.h>)
+template <std::size_t BUFFER_SIZE>
+std::string Process::readFrom(const int& pipe) {
   auto oss = std::ostringstream{};
   ssize_t bytes;
   do {
@@ -291,12 +400,14 @@ std::istringstream Process::readFrom(const int& pipe) {
     static_assert(BUFFER_SIZE > 1, "BUFFER_SIZE needs to have space for '\0'");
     bytes = read(pipe, buffer, BUFFER_SIZE - 1);
     if (bytes < 0) { //! read failed
+      [[maybe_unused]] const auto& error = errno;
+      //! no error handling
       return {};
     }
     buffer[bytes] = '\0';
     oss << std::move(buffer);
   } while (bytes == BUFFER_SIZE - 1);
-  return std::istringstream{oss.str()};
+  return oss.str();
 }
 #endif
 #endif
@@ -307,16 +418,38 @@ inline void Process::waitExitLoop() {
   int status;
   while (true) {
     auto pid = waitpid(this->pid_, &status, WNOHANG);
-    if (pid != 0) {
-      if (pid != -1 && WIFEXITED(status) != 0) {
-        this->exitCode_ = WEXITSTATUS(status);
+    if (pid == 0) {
+      continue;
+    }
+    if (pid == -1) {
+      //! no error handling
+      break;
+    }
+    if (WIFEXITED(status) == 0) {
+      if (WIFSIGNALED(status) != 0) {
+        [[maybe_unused]] const auto& sig = WTERMSIG(status);
+        //! no error handling
+      }
+      if (WIFSTOPPED(status) != 0) {
+        [[maybe_unused]] const auto& sig = WSTOPSIG(status);
+        //! no error handling
       }
       break;
     }
+    this->exitCode_ = WEXITSTATUS(status);
+    break;
   }
 }
 #endif
 #endif
+
+constexpr void Process::swap(Process&& other) {
+  std::swap(this->pid_, other.pid_);
+  std::swap(this->stdinPipe_, other.stdinPipe_);
+  std::swap(this->stdoutPipe_, other.stdoutPipe_);
+  std::swap(this->stderrPipe_, other.stderrPipe_);
+  std::swap(this->exitCode_, other.exitCode_);
+}
 
 } /// namespace cu0
 

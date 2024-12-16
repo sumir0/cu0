@@ -19,7 +19,7 @@ int main() {}
 #else
 
 int main() {
-  auto someProcess = cu0::Process::create(cu0::Executable{
+  const auto someProcess = cu0::Process::create(cu0::Executable{
     .binary = "someExecutable"
   });
   if (!someProcess.has_value()) {
@@ -29,10 +29,10 @@ int main() {
   //! @note stderr contains standard output of the created process
   //!     at the moment of call
   const auto output = someProcess->stderr();
-  if (output.str().empty()) {
+  if (output.empty()) {
     std::cout << "Stderr of the created process is empty" << '\n';
   } else {
-    std::cout << "Stderr of the created process: " << output.str() << '\n';
+    std::cout << "Stderr of the created process: " << output << '\n';
   }
 }
 
