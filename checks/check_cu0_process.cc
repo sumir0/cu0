@@ -63,6 +63,7 @@ int main(int argc, char** argv) {
 #warning __unix__ is not defined => cu0::Process::create() will not be checked
 #endif
 
+  constexpr auto SLEEP_DURATION = 8; //! [s]
   //! for subprocess check
   if (argc > 1) {
     if (std::string{argv[1]} == "64") {
@@ -71,6 +72,9 @@ int main(int argc, char** argv) {
       std::cout << input;
       std::cerr << input << input;
       return std::stoi(argv[1]);
+    } else if (std::string{argv[1]} == "128") {
+      std::this_thread::sleep_for(std::chrono::seconds{SLEEP_DURATION});
+      return 0;
     }
     std::cout << argv[1];
     std::cerr << argv[1] << argv[1];
@@ -384,6 +388,62 @@ int main(int argc, char** argv) {
 #else
 #warning __unix__ is not defined => cu0::Process::stdout() will not be checked
 #warning __unix__ is not defined => cu0::Process::stderr() will not be checked
+#endif
+
+#ifdef __unix__
+#if __has_include(<signal.h>) && __has_include(<sys/types.h>) && \
+    __has_include(<sys/wait.h>)
+  {
+    const auto executableWithSleep = cu0::Executable{
+      .binary = argv[0],
+      .arguments = {"128"},
+    };
+    const auto start = std::chrono::high_resolution_clock::now();
+    auto processWithSleep = cu0::Process::create(executableWithSleep);
+    assert(processWithSleep.has_value());
+    assert(!processWithSleep->exitCode().has_value());
+    processWithSleep->signal(SIGTERM);
+    processWithSleep->wait();
+    const auto end = std::chrono::high_resolution_clock::now();
+    assert(!processWithSleep->exitCode().has_value());
+    assert(processWithSleep->terminationCode().has_value());
+    assert(processWithSleep->terminationCode().value() == SIGTERM);
+    assert(
+        std::chrono::duration_cast<std::chrono::seconds>(end - start) <
+            //! divide by 2 to minimize calculation errors
+            std::chrono::seconds{SLEEP_DURATION} / 2
+    );
+  }
+  {
+    const auto executableWithSleep = cu0::Executable{
+      .binary = argv[0],
+      .arguments = {"128"},
+    };
+    const auto start = std::chrono::high_resolution_clock::now();
+    auto processWithSleep = cu0::Process::create(executableWithSleep);
+    assert(processWithSleep.has_value());
+    assert(!processWithSleep->exitCode().has_value());
+    processWithSleep->signal(SIGKILL);
+    processWithSleep->wait();
+    const auto end = std::chrono::high_resolution_clock::now();
+    assert(!processWithSleep->exitCode().has_value());
+    assert(processWithSleep->terminationCode().has_value());
+    assert(processWithSleep->terminationCode().value() == SIGKILL);
+    assert(
+        std::chrono::duration_cast<std::chrono::seconds>(end - start) <
+            //! divide by 2 to minimize calculation errors
+            std::chrono::seconds{SLEEP_DURATION} / 2
+    );
+  }
+#else
+#warning <signal.h> or <sys/types.h> or <sys/wait.h> is not found => \
+    cu0::Process::signal() and cu0::Process::terminationCode() will not be \
+    checked
+#endif
+#else
+#warning __unix__ is not defined => \
+    cu0::Process::signal() and cu0::Process::terminationCode() will not be \
+    checked
 #endif
 
   return 0;

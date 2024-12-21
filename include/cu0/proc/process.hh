@@ -31,16 +31,26 @@
     cu0::Process::wait() will not be supported
 #warning <sys/types.h> is not found => \
     cu0::Process::exitCode() will not be supported
+#warning <sys/types.h> is not found => \
+    cu0::Process::terminationCode() will not be supported
 #else
 #include <sys/types.h>
 #endif
 #if !__has_include(<sys/wait.h>)
-#warning <sys/types.h> is not found => \
+#warning <sys/wait.h> is not found => \
     cu0::Process::wait() will not be supported
 #warning <sys/wait.h> is not found => \
     cu0::Process::exitCode() will not be supported
+#warning <sys/wait.h> is not found => \
+    cu0::Process::terminationCode() will not be supported
 #else
 #include <sys/wait.h>
+#endif
+#if !__has_include(<signal.h>)
+#warning <signal.h> is not found => \
+    cu0::Process::signal() will not be supported
+#else
+#include <signal.h>
 #endif
 #else
 #warning __unix__ is not defined => \
@@ -51,6 +61,8 @@
     cu0::Process::wait() will not be supported
 #warning __unix__ is not defined => \
     cu0::Process::exitCode() will not be supported
+#warning __unix__ is not defined => \
+    cu0::Process::terminationCode() will not be supported
 #warning <unistd.h> is not found => \
     cu0::Process::stdin() will not be supported
 #warning <unistd.h> is not found => \
@@ -126,11 +138,22 @@ public:
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   /*!
    * @brief accesses exit status code
-   * @note exit status code will be empty until the process has been waited for
+   * @note exit status code will be empty until the process has been waited
    *     @see Process::wait()
-   * @return copy of exit status code
+   * @return const reference to exit status code
    */
   constexpr const std::optional<int>& exitCode() const;
+#endif
+#endif
+#ifdef __unix__
+#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
+  /*!
+   * @brief accesses termination signal code
+   * @note termination signal code will be empty until
+   *     the process has been waited @see Process::wait()
+   * @return const reference to termination signal code
+   */
+  constexpr const std::optional<int>& terminationCode() const;
 #endif
 #endif
 #ifdef __unix__
@@ -158,6 +181,15 @@ public:
    * @return stderr as a std::string
    */
   std::string stderr() const;
+#endif
+#endif
+#ifdef __unix__
+#if __has_include(<signal.h>)
+  /*!
+   * @brief signal sends the specified code as a signal to the process
+   * @param code is the signal to be sent
+   */
+  void signal(const int& code) const;
 #endif
 #endif
 protected:
@@ -215,6 +247,7 @@ protected:
   //! if waited -> actual exit status code value @see Process::wait()
   //! else -> empty exit status code value
   std::optional<int> exitCode_ = {};
+  std::optional<int> terminationCode_ = {};
 #endif
 #endif
 private:
@@ -265,29 +298,29 @@ inline std::optional<Process> Process::create(const Executable& executable) {
   int inFd[2];
   int outFd[2];
   int errFd[2];
-  pipe(inFd);
-  pipe(outFd);
-  pipe(errFd);
-  const auto pid = vfork();
+  ::pipe(inFd);
+  ::pipe(outFd);
+  ::pipe(errFd);
+  const auto pid = ::vfork();
   if (pid == 0) { //! forked process
-    close(inFd[1]);
-    close(outFd[0]);
-    close(errFd[0]);
-    dup2(inFd[0], STDIN_FILENO);
-    dup2(outFd[1], STDOUT_FILENO);
-    dup2(errFd[1], STDERR_FILENO);
-    close(inFd[0]);
-    close(outFd[1]);
-    close(errFd[1]);
-    const auto execRet = execve(argvRaw[0], argvRaw.get(), envpRaw.get());
+    ::close(inFd[1]);
+    ::close(outFd[0]);
+    ::close(errFd[0]);
+    ::dup2(inFd[0], STDIN_FILENO);
+    ::dup2(outFd[1], STDOUT_FILENO);
+    ::dup2(errFd[1], STDERR_FILENO);
+    ::close(inFd[0]);
+    ::close(outFd[1]);
+    ::close(errFd[1]);
+    const auto execRet = ::execve(argvRaw[0], argvRaw.get(), envpRaw.get());
     if (execRet != 0) {
       //! fail
       exit(errno);
     }
   }
-  close(inFd[0]);
-  close(outFd[1]);
-  close(errFd[1]);
+  ::close(inFd[0]);
+  ::close(outFd[1]);
+  ::close(errFd[1]);
   if (pid < 0) { //! fork failed
     return {};
   }
@@ -304,9 +337,9 @@ inline std::optional<Process> Process::create(const Executable& executable) {
 inline Process::~Process() {
 #ifdef __unix__
 #if __has_include(<unistd.h>)
-  close(this->stdinPipe_);
-  close(this->stdoutPipe_);
-  close(this->stderrPipe_);
+  ::close(this->stdinPipe_);
+  ::close(this->stdoutPipe_);
+  ::close(this->stderrPipe_);
 #endif
 #endif
 }
@@ -344,6 +377,14 @@ constexpr const std::optional<int>& Process::exitCode() const {
 #endif
 
 #ifdef __unix__
+#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
+constexpr const std::optional<int>& Process::terminationCode() const {
+  return this->terminationCode_;
+}
+#endif
+#endif
+
+#ifdef __unix__
 #if __has_include(<unistd.h>)
 inline void Process::stdin(const std::string& input) const {
   Process::writeInto<1024>(this->stdinPipe_, input);
@@ -368,6 +409,14 @@ inline std::string Process::stderr() const {
 #endif
 
 #ifdef __unix__
+#if __has_include(<signal.h>)
+inline void Process::signal(const int& code) const {
+  ::kill(this->pid_, code); //! no error handling
+}
+#endif
+#endif
+
+#ifdef __unix__
 #if __has_include(<unistd.h>)
 template <std::size_t BUFFER_SIZE>
 void Process::writeInto(const int& pipe, const std::string& input) {
@@ -383,7 +432,7 @@ void Process::writeInto(const int& pipe, const std::string& input) {
     for (auto j = 0; j < end; j++) {
       buffer[j] = data[j];
     }
-    write(pipe, buffer, end); //! no error handling
+    ::write(pipe, buffer, end); //! no error handling
   }
 }
 #endif
@@ -398,7 +447,7 @@ std::string Process::readFrom(const int& pipe) {
   do {
     char buffer[BUFFER_SIZE];
     static_assert(BUFFER_SIZE > 1, "BUFFER_SIZE needs to have space for '\0'");
-    bytes = read(pipe, buffer, BUFFER_SIZE - 1);
+    bytes = ::read(pipe, buffer, BUFFER_SIZE - 1);
     if (bytes < 0) { //! read failed
       [[maybe_unused]] const auto& error = errno;
       //! no error handling
@@ -417,7 +466,7 @@ std::string Process::readFrom(const int& pipe) {
 inline void Process::waitExitLoop() {
   int status;
   while (true) {
-    auto pid = waitpid(this->pid_, &status, WNOHANG);
+    auto pid = ::waitpid(this->pid_, &status, WNOHANG);
     if (pid == 0) {
       continue;
     }
@@ -427,7 +476,7 @@ inline void Process::waitExitLoop() {
     }
     if (WIFEXITED(status) == 0) {
       if (WIFSIGNALED(status) != 0) {
-        [[maybe_unused]] const auto& sig = WTERMSIG(status);
+        this->terminationCode_ = WTERMSIG(status);
         //! no error handling
       }
       if (WIFSTOPPED(status) != 0) {

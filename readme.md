@@ -161,14 +161,14 @@ int main() {
   //! @note exit code contains exit status code of the created process
   const auto exitCode = someProcess->wait().exitCode();
   if (!exitCode.has_value()) {
-    std::cout << "Error: the exit code was not obtained" << '\n';
+    std::cout << "The exit code was not obtained" << '\n';
   } else {
     std::cout << "Exit code of the created process: " << *exitCode << '\n';
   }
 }
 ```
 
-#### Get stdout (stderr) of a process
+#### Get stdout (or stderr) of a process
 
 `examples/example_cu0_process_stdout.cc`
 ```c++
@@ -211,6 +211,26 @@ int main() {
   //! @note not supported on all platforms yet
   //! @note stdin passes an input to the stdin of the process
   someProcess->stdin("someInput");
+}
+```
+
+#### Send termination signal to a process
+
+`examples/example_cu0_process_signal.cc`
+```c++
+#include <cu0/proc.hxx>
+#include <iostream>
+
+int main() {
+  const auto someProcess = cu0::Process::create(cu0::Executable{
+    .binary = "someExecutable"
+  });
+  if (!someProcess.has_value()) {
+    std::cout << "Error: the process was not created" << '\n';
+  }
+  //! @note not supported on all platforms yet
+  //! @note signals the SIGTERM signal to the process
+  someProcess->signal(SIGTERM);
 }
 ```
 
