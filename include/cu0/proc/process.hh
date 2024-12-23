@@ -30,6 +30,8 @@
 #warning <sys/types.h> is not found => \
     cu0::Process::wait() will not be supported
 #warning <sys/types.h> is not found => \
+    cu0::Process::waitCautious() will not be supported
+#warning <sys/types.h> is not found => \
     cu0::Process::exitCode() will not be supported
 #warning <sys/types.h> is not found => \
     cu0::Process::terminationCode() will not be supported
@@ -39,6 +41,8 @@
 #if !__has_include(<sys/wait.h>)
 #warning <sys/wait.h> is not found => \
     cu0::Process::wait() will not be supported
+#warning <sys/wait.h> is not found => \
+    cu0::Process::waitCautious() will not be supported
 #warning <sys/wait.h> is not found => \
     cu0::Process::exitCode() will not be supported
 #warning <sys/wait.h> is not found => \
@@ -60,6 +64,8 @@
 #warning __unix__ is not defined => \
     cu0::Process::wait() will not be supported
 #warning __unix__ is not defined => \
+    cu0::Process::waitCautious() will not be supported
+#warning __unix__ is not defined => \
     cu0::Process::exitCode() will not be supported
 #warning __unix__ is not defined => \
     cu0::Process::terminationCode() will not be supported
@@ -78,6 +84,14 @@ namespace cu0 {
  */
 struct Process {
 public:
+  enum struct WaitError {
+    NO_ERROR = 0, //! no error
+    CHILD, //! @see ECHILD
+    INVAL, //! @see EINVAL
+    INTR, //! @see EINTR
+    STOPPED, //! process has been stopped @see Process::stopCode()
+             //!     @see WIFSTOPPED
+  };
 #ifdef __unix__
 #if __has_include(<unistd.h>)
   /*!
@@ -128,10 +142,19 @@ public:
 #ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   /*!
-   * @brief waits for a process to exit
-   * @return mutable process
+   * @brief waits for the process to exit or to be terminated
    */
-  Process& wait();
+  void wait();
+#endif
+#endif
+#ifdef __unix__
+#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
+  /*!
+   * @brief waitCautious waits for the process to exit or to be terminated
+   *     @note error is returned if any
+   * @return error code @see WaitError
+   */
+  WaitError waitCautious();
 #endif
 #endif
 #ifdef __unix__
@@ -154,6 +177,17 @@ public:
    * @return const reference to termination signal code
    */
   constexpr const std::optional<int>& terminationCode() const;
+#endif
+#endif
+#ifdef __unix__
+#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
+  /*!
+   * @brief accesses stop signal code
+   * @note stop signal code will be empty until
+   *     the process has been waited @see Process::wait()
+   * @return const reference to stop signal code
+   */
+  constexpr const std::optional<int>& stopCode() const;
 #endif
 #endif
 #ifdef __unix__
@@ -230,8 +264,12 @@ protected:
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   /*!
    * @brief loop to wait for process exit
+   * @tparam Return is the return type
+   *     if Return == void -> no errors are returned and handled
+   *     else -> the first occured error is returned
    */
-  void waitExitLoop();
+  template <class Return>
+  Return waitExitLoop();
 #endif
 #endif
   //! process identifier
@@ -244,10 +282,16 @@ protected:
   int stderrPipe_ = -1;
 #ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
-  //! if waited -> actual exit status code value @see Process::wait()
+  //! if waited -> actual exit status code value if present @see Process::wait()
   //! else -> empty exit status code value
   std::optional<int> exitCode_ = {};
+  //! if waited -> actual termination signal code value if present
+  //!     @see Process::wait()
+  //! else -> empty termination signal code value
   std::optional<int> terminationCode_ = {};
+  //! if waited -> actual stop signal code value if present @see Process::wait()
+  //! else -> empty stop signal code value
+  std::optional<int> stopCode_ = {};
 #endif
 #endif
 private:
@@ -361,9 +405,16 @@ constexpr const unsigned& Process::pid() const {
 
 #ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
-inline Process& Process::wait() {
-  this->waitExitLoop();
-  return *this;
+inline void Process::wait() {
+  this->waitExitLoop<void>();
+}
+#endif
+#endif
+
+#ifdef __unix__
+#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
+inline typename Process::WaitError Process::waitCautious() {
+  return this->waitExitLoop<WaitError>();
 }
 #endif
 #endif
@@ -463,7 +514,12 @@ std::string Process::readFrom(const int& pipe) {
 
 #ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
-inline void Process::waitExitLoop() {
+template <class Return>
+inline Return Process::waitExitLoop() {
+  static_assert(
+      std::is_same_v<Return, void> ||
+      std::is_same_v<Return, WaitError>
+  );
   int status;
   while (true) {
     auto pid = ::waitpid(this->pid_, &status, WNOHANG);
@@ -471,22 +527,43 @@ inline void Process::waitExitLoop() {
       continue;
     }
     if (pid == -1) {
-      //! no error handling
-      break;
+      if constexpr (std::is_same_v<Return, WaitError>) {
+        switch (errno) {
+        case ECHILD:
+          return WaitError::CHILD;
+        case EINVAL:
+          return WaitError::INVAL;
+        case EINTR:
+          return WaitError::INTR;
+        }
+      } else {
+        //! no error handling
+        break;
+      }
     }
     if (WIFEXITED(status) == 0) {
       if (WIFSIGNALED(status) != 0) {
         this->terminationCode_ = WTERMSIG(status);
-        //! no error handling
+        //! no error handling is needed because the process has been waited
+        //!     even if it was terminated
       }
       if (WIFSTOPPED(status) != 0) {
-        [[maybe_unused]] const auto& sig = WSTOPSIG(status);
-        //! no error handling
+        this->stopCode_ = WSTOPSIG(status);
+        if constexpr (std::is_same_v<Return, WaitError>) {
+          return WaitError::STOPPED;
+        } else {
+          //! no error handling
+        }
       }
       break;
     }
     this->exitCode_ = WEXITSTATUS(status);
     break;
+  }
+  if constexpr (std::is_same_v<Return, void>) {
+    return;
+  } else {
+    return WaitError::NO_ERROR;
   }
 }
 #endif

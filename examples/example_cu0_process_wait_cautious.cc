@@ -9,12 +9,12 @@
 //!         no feature-related compile-time warnings will be present
 #ifndef __unix__
 #warning __unix__ is not defined => \
-    cu0::Process::wait() will not be used in the example
+    cu0::Process::waitCautious() will not be used in the example
 int main() {}
 #else
 #if !__has_include(<sys/types.h>) || !__has_include(<sys/wait.h>)
 #warning <sys/types.h> or <sys/wait.h> is not found => \
-    cu0::Process::wait() will not be used in this example
+    cu0::Process::waitCautious() will not be used in this example
 int main() {}
 #else
 
@@ -26,14 +26,20 @@ int main() {
     std::cout << "Error: the process was not created" << '\n';
   }
   //! @note not supported on all platforms yet
-  //! @note the wait function waits for a process to execute
+  //! @note the waitCautious function waits for a process to execute
+  //! @note and returns an error code
+  //!     if no errors occured -> returns cu0::Process::WaitError::NO_ERROR
+  //!     else -> an error has occured
   //! @note if the process is active -> will block
-  someProcess->wait();
-  const auto exitCode = someProcess->exitCode();
-  if (!exitCode.has_value()) {
-    std::cout << "Error: the exit code was not obtained" << '\n';
-  } else {
-    std::cout << "Exit code of the created process: " << *exitCode << '\n';
+  const auto error = someProcess->waitCautious();
+  switch (error) {
+  case cu0::Process::WaitError::NO_ERROR:
+    std::cout << "There were no errors" << '\n';
+    break;
+  default:
+    std::cout << "There was an error. Error code: " <<
+        static_cast<int>(error) << '\n';
+    break;
   }
 }
 

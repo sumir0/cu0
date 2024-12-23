@@ -25,10 +25,11 @@ int main() {
   if (!someProcess.has_value()) {
     std::cout << "Error: the process was not created" << '\n';
   }
+  someProcess->wait();
   //! @note not supported on all platforms yet
   //! @note exit code can be obtained only after a call to the wait function
   //! @note exit code contains exit status code of the created process
-  const auto exitCode = someProcess->wait().exitCode();
+  const auto exitCode = someProcess->exitCode();
   if (!exitCode.has_value()) {
     std::cout << "The exit code was not obtained" << '\n';
   } else {

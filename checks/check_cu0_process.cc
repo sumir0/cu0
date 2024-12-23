@@ -83,40 +83,98 @@ int main(int argc, char** argv) {
 
 #ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
-  const auto executableWithExitCodeTwo = cu0::Executable{
-    .binary = argv[0],
-    .arguments = {"2"},
-  };
-  auto processWithExitCodeTwo =
-      cu0::Process::create(executableWithExitCodeTwo);
-  assert(processWithExitCodeTwo.has_value());
-  std::atomic<bool> waitFail = true;
-  auto waitThread = std::thread([&processWithExitCodeTwo, &waitFail](){
-    assert(&processWithExitCodeTwo->wait() == &(*processWithExitCodeTwo));
-    waitFail = false;
-  });
-  const auto waitThreadStartTime = std::chrono::high_resolution_clock::now();
-  while (
-      waitFail &&
-      std::chrono::duration_cast<std::chrono::seconds>(
-          std::chrono::high_resolution_clock::now() - waitThreadStartTime
-      ) < std::chrono::seconds{32}
-  ) {
-    //! do nothing, wait
+  {
+    const auto executableWithExitCodeTwo = cu0::Executable{
+      .binary = argv[0],
+      .arguments = {"2"},
+    };
+    auto processWithExitCodeTwo =
+        cu0::Process::create(executableWithExitCodeTwo);
+    assert(processWithExitCodeTwo.has_value());
+    std::atomic<bool> waitFail = true;
+    auto waitThread = std::thread([&processWithExitCodeTwo, &waitFail](){
+      processWithExitCodeTwo->wait();
+      waitFail = false;
+    });
+    const auto waitThreadStartTime = std::chrono::high_resolution_clock::now();
+    while (
+        waitFail &&
+        std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::high_resolution_clock::now() - waitThreadStartTime
+        ) < std::chrono::seconds{32}
+    ) {
+      //! do nothing, wait
+    }
+    if (waitThread.joinable()) {
+      waitThread.join();
+    }
+    assert(!waitFail);
+    processWithExitCodeTwo->wait();
+    assert(processWithExitCodeTwo->exitCode().has_value());
+    assert(processWithExitCodeTwo->exitCode().value() == 2);
+    processWithExitCodeTwo->wait();
+    assert(processWithExitCodeTwo->exitCode().has_value());
+    assert(processWithExitCodeTwo->exitCode().value() == 2);
+    assert(
+        processWithExitCodeTwo->waitCautious() == cu0::Process::WaitError::CHILD
+    );
+    assert(processWithExitCodeTwo->exitCode().has_value());
+    assert(processWithExitCodeTwo->exitCode().value() == 2);
   }
-  if (waitThread.joinable()) {
-    waitThread.join();
+  {
+    const auto executableWithExitCodeTwo = cu0::Executable{
+      .binary = argv[0],
+      .arguments = {"2"},
+    };
+    auto processWithExitCodeTwo =
+        cu0::Process::create(executableWithExitCodeTwo);
+    assert(processWithExitCodeTwo.has_value());
+    std::atomic<bool> waitFail = true;
+    auto waitThread = std::thread([&processWithExitCodeTwo, &waitFail](){
+      assert(
+          processWithExitCodeTwo->waitCautious() ==
+              cu0::Process::WaitError::NO_ERROR
+      );
+      waitFail = false;
+    });
+    const auto waitThreadStartTime = std::chrono::high_resolution_clock::now();
+    while (
+        waitFail &&
+        std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::high_resolution_clock::now() - waitThreadStartTime
+        ) < std::chrono::seconds{32}
+    ) {
+      //! do nothing, wait
+    }
+    if (waitThread.joinable()) {
+      waitThread.join();
+    }
+    assert(!waitFail);
+    assert(
+        processWithExitCodeTwo->waitCautious() == cu0::Process::WaitError::CHILD
+    );
+    assert(processWithExitCodeTwo->exitCode().has_value());
+    assert(processWithExitCodeTwo->exitCode().value() == 2);
+    assert(
+        processWithExitCodeTwo->waitCautious() == cu0::Process::WaitError::CHILD
+    );
+    assert(processWithExitCodeTwo->exitCode().has_value());
+    assert(processWithExitCodeTwo->exitCode().value() == 2);
+    processWithExitCodeTwo->wait();
+    assert(processWithExitCodeTwo->exitCode().has_value());
+    assert(processWithExitCodeTwo->exitCode().value() == 2);
   }
-  assert(!waitFail);
-  assert(&processWithExitCodeTwo->wait() == &(*processWithExitCodeTwo));
-  assert(processWithExitCodeTwo->exitCode().has_value());
-  assert(processWithExitCodeTwo->exitCode().value() == 2);
 #else
 #warning <sys/types.h> or <sys/wait.h> is not found => \
     cu0::Process::wait() will not be checked
+#warning <sys/types.h> or <sys/wait.h> is not found => \
+    cu0::Process::waitCautious() will not be checked
 #endif
 #else
-#warning __unix__ is not defined => cu0::Process::wait() will not be checked
+#warning __unix__ is not defined => \
+    cu0::Process::wait() will not be checked
+#warning __unix__ is not defined => \
+    cu0::Process::waitCautious() will not be checked
 #endif
 
 #ifdef __unix__
