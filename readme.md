@@ -117,13 +117,13 @@ int main() {
   //! @note executable can be run by a process
   const auto executable = cu0::Executable{ .binary = "a.out" };
   //! @note optional contains a process if it was created
-  const std::optional<cu0::Process> optional =
+  const std::variant<cu0::Process, cu0::Process::CreateError> variant =
       cu0::Process::create(executable);
-  if (!optional.has_value()) {
+  if (!std::holds_alternative<cu0::Process>(variant)) {
     std::cout << "Error: No processes were created" << '\n';
   } else {
     //! @note createdProcess contains a representation of the running executable
-    const auto& createdProcess = *optional;
+    const auto& createdProcess = std::get<cu0::Process>(variant);
     std::cout << "Pid of the created process: " << createdProcess.pid() << '\n';
   }
 }
@@ -150,16 +150,18 @@ int main() {
 #include <cu0/proc.hxx>
 
 int main() {
-  auto someProcess = cu0::Process::create(cu0::Executable{
+  auto variant = cu0::Process::create(cu0::Executable{
     .binary = "someExecutable"
   });
-  if (!someProcess.has_value()) {
+  if (!std::holds_alternative<cu0::Process>(variant)) {
     std::cout << "Error: the process was not created" << '\n';
   }
+  auto& someProcess = std::get<cu0::Process>(variant);
+  someProcess.wait();
   //! @note not supported on all platforms yet
   //! @note exit code can be obtained only after a call to the wait function
   //! @note exit code contains exit status code of the created process
-  const auto exitCode = someProcess->wait().exitCode();
+  const auto& exitCode = someProcess.exitCode();
   if (!exitCode.has_value()) {
     std::cout << "The exit code was not obtained" << '\n';
   } else {
@@ -176,16 +178,17 @@ int main() {
 #include <iostream>
 
 int main() {
-  const auto someProcess = cu0::Process::create(cu0::Executable{
+  const auto variant = cu0::Process::create(cu0::Executable{
     .binary = "someExecutable"
   });
-  if (!someProcess.has_value()) {
+  if (!std::holds_alternative<cu0::Process>(variant)) {
     std::cout << "Error: the process was not created" << '\n';
   }
+  const auto& someProcess = std::get<cu0::Process>(variant);
   //! @note not supported on all platforms yet
   //! @note stdout contains standard output of the created process
   //!     at the moment of call
-  const auto output = someProcess->stdout();
+  const auto output = someProcess.stdout();
   if (output.empty()) {
     std::cout << "Stdout of the created process is empty" << '\n';
   } else {
@@ -202,15 +205,16 @@ int main() {
 #include <iostream>
 
 int main() {
-  const auto someProcess = cu0::Process::create(cu0::Executable{
+  const auto variant = cu0::Process::create(cu0::Executable{
     .binary = "someExecutable"
   });
-  if (!someProcess.has_value()) {
+  if (!std::holds_alternative<cu0::Process>(variant)) {
     std::cout << "Error: the process was not created" << '\n';
   }
+  const auto& someProcess = std::get<cu0::Process>(variant);
   //! @note not supported on all platforms yet
   //! @note stdin passes an input to the stdin of the process
-  someProcess->stdin("someInput");
+  someProcess.stdin("someInput");
 }
 ```
 
@@ -222,15 +226,16 @@ int main() {
 #include <iostream>
 
 int main() {
-  const auto someProcess = cu0::Process::create(cu0::Executable{
+  const auto variant = cu0::Process::create(cu0::Executable{
     .binary = "someExecutable"
   });
-  if (!someProcess.has_value()) {
+  if (!std::holds_alternative<cu0::Process>(variant)) {
     std::cout << "Error: the process was not created" << '\n';
   }
+  const auto& someProcess = std::get<cu0::Process>(variant);
   //! @note not supported on all platforms yet
   //! @note signals the SIGTERM signal to the process
-  someProcess->signal(SIGTERM);
+  someProcess.signal(SIGTERM);
 }
 ```
 

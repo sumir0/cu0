@@ -23,13 +23,13 @@ int main() {
   //! @note executable can be run by a process
   const auto executable = cu0::Executable{ .binary = "a.out" };
   //! @note optional contains a process if it was created
-  const std::optional<cu0::Process> optional =
+  const std::variant<cu0::Process, cu0::Process::CreateError> variant =
       cu0::Process::create(executable);
-  if (!optional.has_value()) {
+  if (!std::holds_alternative<cu0::Process>(variant)) {
     std::cout << "Error: No processes were created" << '\n';
   } else {
     //! @note createdProcess contains a representation of the running executable
-    const auto& createdProcess = *optional;
+    const auto& createdProcess = std::get<cu0::Process>(variant);
     std::cout << "Pid of the created process: " << createdProcess.pid() << '\n';
   }
 }

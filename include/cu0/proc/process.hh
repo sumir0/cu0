@@ -3,10 +3,9 @@
 
 #include <optional>
 #include <sstream>
+#include <variant>
 
 #include <cu0/proc/executable.hh>
-
-#include <iostream>
 
 /*!
  * @brief checks software compatibility during compile-time
@@ -84,6 +83,11 @@ namespace cu0 {
  */
 struct Process {
 public:
+  enum struct CreateError {
+    NO_ERROR = 0, //! no error
+    AGAIN, //! @see EAGAIN
+    NOMEM, //! @see ENOMEM
+  };
   enum struct WaitError {
     NO_ERROR = 0, //! no error
     CHILD, //! @see ECHILD
@@ -112,7 +116,7 @@ public:
    * @param executable is the excutable to be run by the process
    * @return created process
    */
-  [[nodiscard]] static std::optional<Process> create(
+  [[nodiscard]] static std::variant<Process, CreateError> create(
       const Executable& executable
   );
 #endif
@@ -328,15 +332,17 @@ inline Process Process::current() {
 
 #ifdef __unix__
 #if __has_include(<unistd.h>)
-inline std::optional<Process> Process::create(const Executable& executable) {
+inline std::variant<Process, Process::CreateError> Process::create(
+    const Executable& executable
+) {
   const auto [argv, argvSize] = util::argvOf(executable);
   const auto [envp, envpSize] = util::envpOf(executable);
   auto argvRaw = std::make_unique<char*[]>(argvSize);
-  for (auto i = 0; i < argvSize; i++) {
+  for (auto i = 0u; i < argvSize; i++) {
     argvRaw[i] = argv[i].get();
   }
   auto envpRaw = std::make_unique<char*[]>(envpSize);
-  for (auto i = 0; i < envpSize; i++) {
+  for (auto i = 0u; i < envpSize; i++) {
     envpRaw[i] = envp[i].get();
   }
   int inFd[2];
@@ -366,14 +372,22 @@ inline std::optional<Process> Process::create(const Executable& executable) {
   ::close(outFd[1]);
   ::close(errFd[1]);
   if (pid < 0) { //! fork failed
-    return {};
+    switch (errno) {
+    case EAGAIN:
+      return CreateError::AGAIN;
+    case ENOMEM:
+      return CreateError::NOMEM;
+    }
+    //! no error can be identified but th process was not created
+    //! typically this line of code can not be reached
+    return CreateError::NO_ERROR;
   }
   auto process = Process{};
   process.pid_ = pid;
   process.stdinPipe_ = inFd[1];
   process.stdoutPipe_ = outFd[0];
   process.stderrPipe_ = errFd[0];
-  return std::optional<Process>(std::move(process));;
+  return process;
 }
 #endif
 #endif
@@ -472,7 +486,7 @@ inline void Process::signal(const int& code) const {
 template <std::size_t BUFFER_SIZE>
 void Process::writeInto(const int& pipe, const std::string& input) {
   char buffer[BUFFER_SIZE];
-  for (auto i = 0; i <= input.size() / BUFFER_SIZE; i++) {
+  for (auto i = 0u; i <= input.size() / BUFFER_SIZE; i++) {
     const auto data = input.substr(i * BUFFER_SIZE, BUFFER_SIZE);
     std::size_t end;
     if (data.size() != BUFFER_SIZE) {
@@ -480,7 +494,7 @@ void Process::writeInto(const int& pipe, const std::string& input) {
     } else {
       end = BUFFER_SIZE;
     }
-    for (auto j = 0; j < end; j++) {
+    for (auto j = 0u; j < end; j++) {
       buffer[j] = data[j];
     }
     ::write(pipe, buffer, end); //! no error handling

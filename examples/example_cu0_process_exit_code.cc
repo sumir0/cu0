@@ -19,17 +19,18 @@ int main() {}
 #else
 
 int main() {
-  auto someProcess = cu0::Process::create(cu0::Executable{
+  auto variant = cu0::Process::create(cu0::Executable{
     .binary = "someExecutable"
   });
-  if (!someProcess.has_value()) {
+  if (!std::holds_alternative<cu0::Process>(variant)) {
     std::cout << "Error: the process was not created" << '\n';
   }
-  someProcess->wait();
+  auto& someProcess = std::get<cu0::Process>(variant);
+  someProcess.wait();
   //! @note not supported on all platforms yet
   //! @note exit code can be obtained only after a call to the wait function
   //! @note exit code contains exit status code of the created process
-  const auto exitCode = someProcess->exitCode();
+  const auto& exitCode = someProcess.exitCode();
   if (!exitCode.has_value()) {
     std::cout << "The exit code was not obtained" << '\n';
   } else {

@@ -118,13 +118,13 @@ argvOf(
   const auto size = 1 + executable.arguments.size() + 1;
   auto argv = std::make_unique<std::unique_ptr<char[]>[]>(size);
   argv[0] = std::make_unique<char[]>(executable.binary.string().size() + 1);
-  for (auto j = 0; j < executable.binary.string().size(); j++) {
+  for (auto j = 0u; j < executable.binary.string().size(); j++) {
     argv[0][j] = executable.binary.string()[j];
   }
   argv[0][executable.binary.string().size()] = '\0';
-  for (auto i = 1; i < size - 1; i++) {
+  for (auto i = 1u; i < size - 1; i++) {
     argv[i] = std::make_unique<char[]>(executable.arguments[i - 1].size() + 1);
-    for (auto j = 0; j < executable.arguments[i - 1].size(); j++) {
+    for (auto j = 0u; j < executable.arguments[i - 1].size(); j++) {
       argv[i][j] = executable.arguments[i - 1][j];
     }
     argv[i][executable.arguments[i - 1].size()] = '\0';
@@ -144,7 +144,7 @@ envpOf(
   for (const auto& [key, value] : executable.environment) {
     const auto string = key + "=" + value;
     envp[i] = std::make_unique<char[]>(string.size() + 1);
-    for (auto j = 0; j < string.size(); j++) {
+    for (auto j = 0u; j < string.size(); j++) {
       envp[i][j] = string[j];
     }
     envp[i][string.size()] = '\0';

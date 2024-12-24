@@ -19,19 +19,20 @@ int main() {}
 #else
 
 int main() {
-  auto someProcess = cu0::Process::create(cu0::Executable{
+  auto variant = cu0::Process::create(cu0::Executable{
     .binary = "someExecutable"
   });
-  if (!someProcess.has_value()) {
+  if (!std::holds_alternative<cu0::Process>(variant)) {
     std::cout << "Error: the process was not created" << '\n';
   }
+  auto& someProcess = std::get<cu0::Process>(variant);
   //! @note not supported on all platforms yet
   //! @note the waitCautious function waits for a process to execute
   //! @note and returns an error code
   //!     if no errors occured -> returns cu0::Process::WaitError::NO_ERROR
   //!     else -> an error has occured
   //! @note if the process is active -> will block
-  const auto error = someProcess->waitCautious();
+  const auto error = someProcess.waitCautious();
   switch (error) {
   case cu0::Process::WaitError::NO_ERROR:
     std::cout << "There were no errors" << '\n';

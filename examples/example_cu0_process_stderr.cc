@@ -19,16 +19,17 @@ int main() {}
 #else
 
 int main() {
-  const auto someProcess = cu0::Process::create(cu0::Executable{
+  const auto variant = cu0::Process::create(cu0::Executable{
     .binary = "someExecutable"
   });
-  if (!someProcess.has_value()) {
+  if (!std::holds_alternative<cu0::Process>(variant)) {
     std::cout << "Error: the process was not created" << '\n';
   }
+  const auto& someProcess = std::get<cu0::Process>(variant);
   //! @note not supported on all platforms yet
   //! @note stderr contains standard output of the created process
   //!     at the moment of call
-  const auto output = someProcess->stderr();
+  const auto output = someProcess.stderr();
   if (output.empty()) {
     std::cout << "Stderr of the created process is empty" << '\n';
   } else {
