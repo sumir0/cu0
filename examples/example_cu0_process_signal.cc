@@ -28,7 +28,10 @@ int main() {
   const auto& someProcess = std::get<cu0::Process>(variant);
   //! @note not supported on all platforms yet
   //! @note signals the SIGTERM signal to the process
-  someProcess.signal(SIGTERM);
+  const auto errorCode = someProcess.signal(SIGTERM);
+  if (errorCode != cu0::Process::SignalError::NO_ERROR) {
+    std::cout << "Error: the signal was not sent" << '\n';
+  }
 }
 
 #endif

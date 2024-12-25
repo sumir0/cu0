@@ -151,15 +151,18 @@ public:
     NOBUFS = ENOBUFS, //! @see ENOBUFS
     NOMEM = ENOMEM, //! @see ENOMEM
     NXIO = ENXIO, //! @see ENXIO
-    DESTADDRREQ = EDESTADDRREQ, //! @see EDESTADDRREQ
-    DQUOT = EDQUOT, //! @see EDQUOT
-    FAULT = EFAULT, //! @see EFAULT
-    FBIG = EFBIG, //! @see EFBIG
-    NOSPC = ENOSPC, //! @see ENOSPC
-    PERM = EPERM, //! @see EPERM
-    PIPE = EPIPE, //! @see EPIPE
     //! it is possible that a value is not listed in this enum ->
     //!     for other error codes @see ::read()
+  };
+#endif
+#endif
+#ifdef __unix__
+#if __has_include(<signal.h>)
+  enum struct SignalError {
+    NO_ERROR = 0, //! no error
+    INVAL = EINVAL, //! @see EINVAL
+    PERM = EPERM, //! @see EPERM
+    SRCH = ESRCH, //! @see ESRCH
   };
 #endif
 #endif
@@ -297,8 +300,11 @@ public:
   /*!
    * @brief signal sends the specified code as a signal to the process
    * @param code is the signal to be sent
+   * @return
+   *     if there were no errors -> SignalError::NO_ERROR
+   *     if there was an error -> error code (not SignalError::NO_ERROR)
    */
-  void signal(const int& code) const;
+  SignalError signal(const int& code) const;
 #endif
 #endif
 protected:
@@ -577,8 +583,11 @@ Process::stderr() const {
 
 #ifdef __unix__
 #if __has_include(<signal.h>)
-inline void Process::signal(const int& code) const {
-  ::kill(this->pid_, code); //! no error handling
+inline typename Process::SignalError Process::signal(const int& code) const {
+  if (::kill(this->pid_, code) != 0) {
+    return static_cast<SignalError>(errno);
+  }
+  return SignalError::NO_ERROR;
 }
 #endif
 #endif
@@ -666,7 +675,7 @@ inline Return Process::waitExitLoop() {
         return static_cast<WaitError>(errno);
       } else {
         //! no error handling
-        break;
+        return;
       }
     }
     if (WIFEXITED(status) == 0) {
@@ -685,10 +694,10 @@ inline Return Process::waitExitLoop() {
     this->exitCode_ = WEXITSTATUS(status);
     break;
   }
-  if constexpr (std::is_same_v<Return, void>) {
-    return;
-  } else {
+  if constexpr (std::is_same_v<Return, WaitError>) {
     return WaitError::NO_ERROR;
+  } else {
+    return;
   }
 }
 #endif

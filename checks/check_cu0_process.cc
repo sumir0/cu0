@@ -415,7 +415,7 @@ int main(int argc, char** argv) {
   std::cerr << thisProcess.pid() << thisProcess.pid();
   std::cerr.flush();
   const auto [errStr, stderrErrorCode] = thisProcess.stderr();
-  assert(outStr.empty());
+  assert(errStr.empty());
 
   const auto [zeroOutStr, zeroStdoutErrorCode] =
       processWithExitCodeZero.stdout();
@@ -562,7 +562,9 @@ int main(int argc, char** argv) {
     auto& processWithSleep =
         std::get<cu0::Process>(createdWithSleep);
     assert(!processWithSleep.exitCode().has_value());
-    processWithSleep.signal(SIGTERM);
+    assert(
+        processWithSleep.signal(SIGTERM) == cu0::Process::SignalError::NO_ERROR
+    );
     processWithSleep.wait();
     const auto end = std::chrono::high_resolution_clock::now();
     assert(!processWithSleep.exitCode().has_value());
@@ -585,7 +587,9 @@ int main(int argc, char** argv) {
     auto& processWithSleep =
         std::get<cu0::Process>(createdWithSleep);
     assert(!processWithSleep.exitCode().has_value());
-    processWithSleep.signal(SIGKILL);
+    assert(
+        processWithSleep.signal(SIGKILL) == cu0::Process::SignalError::NO_ERROR
+    );
     processWithSleep.wait();
     const auto end = std::chrono::high_resolution_clock::now();
     assert(!processWithSleep.exitCode().has_value());
