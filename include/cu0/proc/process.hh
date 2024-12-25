@@ -83,19 +83,53 @@ namespace cu0 {
  */
 struct Process {
 public:
+#ifdef __unix__
+#if __has_include(<unistd.h>)
   enum struct CreateError {
     NO_ERROR = 0, //! no error
-    AGAIN, //! @see EAGAIN
-    NOMEM, //! @see ENOMEM
+    AGAIN = EAGAIN, //! @see EAGAIN
+    NOMEM = ENOMEM, //! @see ENOMEM
+    FAULT = EFAULT, //! @see EFAULT
+    INVAL = EINVAL, //! @see EINVAL
+    MFILE = EMFILE, //! @see EMFILE
+    NFILE = ENFILE, //! @see ENFILE
   };
+#endif
+#endif
+#ifdef __unix__
+#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   enum struct WaitError {
     NO_ERROR = 0, //! no error
-    CHILD, //! @see ECHILD
-    INVAL, //! @see EINVAL
-    INTR, //! @see EINTR
-    STOPPED, //! process has been stopped @see Process::stopCode()
-             //!     @see WIFSTOPPED
+    CHILD = ECHILD, //! @see ECHILD
+    INVAL = EINVAL, //! @see EINVAL
+    INTR = EINTR, //! @see EINTR
   };
+#endif
+#endif
+#ifdef __unix__
+#if __has_include(<unistd.h>)
+  enum struct WriteError {
+    NO_ERROR = 0, //! no error
+    AGAIN = EAGAIN, //! @see EAGAIN
+#if EWOULDBLOCK != EAGAIN
+    WOULDBLOCK = EWOULDBLOCK, //! @see EWOULDBLOCK
+#endif
+    BADF = EBADF, //! @see EBADF
+    DESTADDRREQ = EDESTADDRREQ, //! @see EDESTADDRREQ
+    DQUOT = EDQUOT, //! @see EDQUOT
+    FAULT = EFAULT, //! @see EFAULT
+    FBIG = EFBIG, //! @see EFBIG
+    INTR = EINTR, //! @see EINTR
+    INVAL = EINVAL, //! @see EINVAL
+    IO = EIO, //! @see EIO
+    NOSPC = ENOSPC, //! @see ENOSPC
+    PERM = EPERM, //! @see EPERM
+    PIPE = EPIPE, //! @see EPIPE
+    //! it is possible that a value is not listed in this enum ->
+    //!     for other error codes @see ::write()
+  };
+#endif
+#endif
 #ifdef __unix__
 #if __has_include(<unistd.h>)
   /*!
@@ -114,7 +148,9 @@ public:
   /*!
    * @brief creates a process using the specified executable
    * @param executable is the excutable to be run by the process
-   * @return created process
+   * @return
+   *     if there were no errors -> created process
+   *     if there was an error -> error code
    */
   [[nodiscard]] static std::variant<Process, CreateError> create(
       const Executable& executable
@@ -146,7 +182,7 @@ public:
 #ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   /*!
-   * @brief waits for the process to exit or to be terminated
+   * @brief waits for the process to exit or to be terminated or to be stopped
    */
   void wait();
 #endif
@@ -154,8 +190,9 @@ public:
 #ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   /*!
-   * @brief waitCautious waits for the process to exit or to be terminated
-   *     @note error is returned if any
+   * @brief waitCautious waits for the process to exit or to be terminated or
+   *     to be stopped
+   * @note error code equal to 0 indicates no error
    * @return error code @see WaitError
    */
   WaitError waitCautious();
@@ -199,8 +236,9 @@ public:
   /*!
    * @brief stdin passes the specified input to the stdin
    * @param input is the input value
+   * @return result of Process::writeInto() @see Process::WriteInto()
    */
-  void stdin(const std::string& input) const;
+  std::tuple<WriteError, std::size_t> stdin(const std::string& input) const;
 #endif
 #endif
 #ifdef __unix__
@@ -238,9 +276,20 @@ protected:
    * @tparam BUFFER_SIZE is the buffer size for writing into the pipe
    * @param pipe is the pipe to write into
    * @param input is the data to write
+   * @return tuple containing
+   *     error code
+   *         if there were no errors -> WriteError::NO_ERROR
+   *         if there was an error -> errno (not WriteError::NO_ERROR)
+   *     number of bytes written
+   *         if there were no errors -> it should be equal to input size
+   *         if there was an error -> it should be equal to the number of
+   *             bytes that had already been written before an error occured
    */
   template <std::size_t BUFFER_SIZE>
-  static void writeInto(const int& pipe, const std::string& input);
+  static std::tuple<WriteError, std::size_t> writeInto(
+      const int& pipe,
+      const std::string& input
+  );
 #endif
 #endif
 #ifdef __unix__
@@ -270,7 +319,7 @@ protected:
    * @brief loop to wait for process exit
    * @tparam Return is the return type
    *     if Return == void -> no errors are returned and handled
-   *     else -> the first occured error is returned
+   *     else -> the first encountered error is returned
    */
   template <class Return>
   Return waitExitLoop();
@@ -348,9 +397,23 @@ inline std::variant<Process, Process::CreateError> Process::create(
   int inFd[2];
   int outFd[2];
   int errFd[2];
-  ::pipe(inFd);
-  ::pipe(outFd);
-  ::pipe(errFd);
+  if (::pipe(inFd) != 0) {
+    return static_cast<CreateError>(errno);
+  }
+  if (::pipe(outFd) != 0) {
+    const auto ret = static_cast<CreateError>(errno);
+    ::close(inFd[0]);
+    ::close(inFd[1]);
+    return ret;
+  }
+  if (::pipe(errFd) != 0) {
+    const auto ret = static_cast<CreateError>(errno);
+    ::close(inFd[0]);
+    ::close(inFd[1]);
+    ::close(outFd[0]);
+    ::close(outFd[1]);
+    return ret;
+  }
   const auto pid = ::vfork();
   if (pid == 0) { //! forked process
     ::close(inFd[1]);
@@ -372,15 +435,7 @@ inline std::variant<Process, Process::CreateError> Process::create(
   ::close(outFd[1]);
   ::close(errFd[1]);
   if (pid < 0) { //! fork failed
-    switch (errno) {
-    case EAGAIN:
-      return CreateError::AGAIN;
-    case ENOMEM:
-      return CreateError::NOMEM;
-    }
-    //! no error can be identified but th process was not created
-    //! typically this line of code can not be reached
-    return CreateError::NO_ERROR;
+    return static_cast<CreateError>(errno);
   }
   auto process = Process{};
   process.pid_ = pid;
@@ -451,8 +506,10 @@ constexpr const std::optional<int>& Process::terminationCode() const {
 
 #ifdef __unix__
 #if __has_include(<unistd.h>)
-inline void Process::stdin(const std::string& input) const {
-  Process::writeInto<1024>(this->stdinPipe_, input);
+inline std::tuple<typename Process::WriteError, std::size_t> Process::stdin(
+    const std::string& input
+) const {
+  return Process::writeInto<1024>(this->stdinPipe_, input);
 }
 #endif
 #endif
@@ -484,7 +541,11 @@ inline void Process::signal(const int& code) const {
 #ifdef __unix__
 #if __has_include(<unistd.h>)
 template <std::size_t BUFFER_SIZE>
-void Process::writeInto(const int& pipe, const std::string& input) {
+std::tuple<typename Process::WriteError, std::size_t> Process::writeInto(
+    const int& pipe,
+    const std::string& input
+) {
+  auto bytesWritten = std::size_t{0};
   char buffer[BUFFER_SIZE];
   for (auto i = 0u; i <= input.size() / BUFFER_SIZE; i++) {
     const auto data = input.substr(i * BUFFER_SIZE, BUFFER_SIZE);
@@ -497,8 +558,24 @@ void Process::writeInto(const int& pipe, const std::string& input) {
     for (auto j = 0u; j < end; j++) {
       buffer[j] = data[j];
     }
-    ::write(pipe, buffer, end); //! no error handling
+    auto bytes = 0;
+    for (
+        auto writeResult = ::write(pipe, buffer, end);
+        ;
+        writeResult = ::write(pipe, buffer + bytes, end - bytes)
+    ) {
+      if (writeResult < 0) {
+        bytesWritten += bytes;
+        return { static_cast<WriteError>(errno), bytesWritten, };
+      }
+      bytes += writeResult;
+      if (bytes >= static_cast<ssize_t>(end)) {
+        break;
+      }
+    }
+    bytesWritten += bytes;
   }
+  return { WriteError::NO_ERROR, bytesWritten, };
 }
 #endif
 #endif
@@ -542,14 +619,7 @@ inline Return Process::waitExitLoop() {
     }
     if (pid == -1) {
       if constexpr (std::is_same_v<Return, WaitError>) {
-        switch (errno) {
-        case ECHILD:
-          return WaitError::CHILD;
-        case EINVAL:
-          return WaitError::INVAL;
-        case EINTR:
-          return WaitError::INTR;
-        }
+        return static_cast<WaitError>(errno);
       } else {
         //! no error handling
         break;
@@ -563,11 +633,8 @@ inline Return Process::waitExitLoop() {
       }
       if (WIFSTOPPED(status) != 0) {
         this->stopCode_ = WSTOPSIG(status);
-        if constexpr (std::is_same_v<Return, WaitError>) {
-          return WaitError::STOPPED;
-        } else {
-          //! no error handling
-        }
+        //! no error handling is needed because the process has been waited
+        //!     even if it was stopped
       }
       break;
     }

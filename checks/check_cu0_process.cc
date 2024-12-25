@@ -262,7 +262,10 @@ int main(int argc, char** argv) {
       std::get<cu0::Process>(std::move(createdWithExitCode64))
     };
     const auto& pipe = processWriteIntoCheck.stdinPipe();
-    ProcessWriteIntoCheck::writeInto<2>(pipe, "333\r\n");
+    const auto [errorCode, bytesWritten] =
+        ProcessWriteIntoCheck::writeInto<2>(pipe, "333\r\n");
+    assert(errorCode == cu0::Process::WriteError::NO_ERROR);
+    assert(bytesWritten == 5);
     processWriteIntoCheck.wait();
     assert(processWriteIntoCheck.exitCode().value() == 64);
     assert(processWriteIntoCheck.stdout() == "333");
@@ -280,7 +283,10 @@ int main(int argc, char** argv) {
       std::get<cu0::Process>(std::move(createdWithExitCode64))
     };
     const auto& pipe = processWriteIntoCheck.stdinPipe();
-    ProcessWriteIntoCheck::writeInto<3>(pipe, "333\r\n");
+    const auto [errorCode, bytesWritten] =
+        ProcessWriteIntoCheck::writeInto<3>(pipe, "333\r\n");
+    assert(errorCode == cu0::Process::WriteError::NO_ERROR);
+    assert(bytesWritten == 5);
     processWriteIntoCheck.wait();
     assert(processWriteIntoCheck.exitCode().value() == 64);
     assert(processWriteIntoCheck.stdout() == "333");
@@ -298,7 +304,10 @@ int main(int argc, char** argv) {
       std::get<cu0::Process>(std::move(createdWithExitCode64))
     };
     const auto& pipe = processWriteIntoCheck.stdinPipe();
-    ProcessWriteIntoCheck::writeInto<4>(pipe, "333\r\n");
+    const auto [errorCode, bytesWritten] =
+        ProcessWriteIntoCheck::writeInto<4>(pipe, "333\r\n");
+    assert(errorCode == cu0::Process::WriteError::NO_ERROR);
+    assert(bytesWritten == 5);
     processWriteIntoCheck.wait();
     assert(processWriteIntoCheck.exitCode().value() == 64);
     assert(processWriteIntoCheck.stdout() == "333");
@@ -316,7 +325,10 @@ int main(int argc, char** argv) {
       std::get<cu0::Process>(std::move(createdWithExitCode64))
     };
     const auto& pipe = processWriteIntoCheck.stdinPipe();
-    ProcessWriteIntoCheck::writeInto<1024>(pipe, "333\r\n");
+    const auto [errorCode, bytesWritten] =
+        ProcessWriteIntoCheck::writeInto<1024>(pipe, "333\r\n");
+    assert(errorCode == cu0::Process::WriteError::NO_ERROR);
+    assert(bytesWritten == 5);
     processWriteIntoCheck.wait();
     assert(processWriteIntoCheck.exitCode().value() == 64);
     assert(processWriteIntoCheck.stdout() == "333");
@@ -334,7 +346,10 @@ int main(int argc, char** argv) {
       std::get<cu0::Process>(std::move(createdWithExitCode64))
     };
     const auto& pipe = processWriteIntoCheck.stdinPipe();
-    ProcessWriteIntoCheck::writeInto<8192>(pipe, "333\r\n");
+    const auto [errorCode, bytesWritten] =
+        ProcessWriteIntoCheck::writeInto<8192>(pipe, "333\r\n");
+    assert(errorCode == cu0::Process::WriteError::NO_ERROR);
+    assert(bytesWritten == 5);
     processWriteIntoCheck.wait();
     assert(processWriteIntoCheck.exitCode().value() == 64);
     assert(processWriteIntoCheck.stdout() == "333");
@@ -350,7 +365,10 @@ int main(int argc, char** argv) {
     assert(std::holds_alternative<cu0::Process>(createdWithExitCode64));
     auto& processWithExitCode64 =
         std::get<cu0::Process>(createdWithExitCode64);
-    processWithExitCode64.stdin("64\r\n");
+    const auto [errorCode, bytesWritten] =
+        processWithExitCode64.stdin("64\r\n");
+    assert(errorCode == cu0::Process::WriteError::NO_ERROR);
+    assert(bytesWritten == 4);
     processWithExitCode64.wait();
     assert(processWithExitCode64.exitCode().value() == 64);
     assert(processWithExitCode64.stdout() == "64");
