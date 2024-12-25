@@ -30,8 +30,7 @@ int main() {
   //! @note stdin passes an input to the stdin of the process
   const auto [errorCode, bytesWritten] = someProcess.stdin("someInput");
   if (errorCode != cu0::Process::WriteError::NO_ERROR) {
-    std::cout <<
-        "Error: the data was not fully passed to stdin of the process" << '\n';
+    std::cout << "Error: data was not fully passed to the stdin" << '\n';
   }
 }
 

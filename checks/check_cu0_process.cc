@@ -262,14 +262,18 @@ int main(int argc, char** argv) {
       std::get<cu0::Process>(std::move(createdWithExitCode64))
     };
     const auto& pipe = processWriteIntoCheck.stdinPipe();
-    const auto [errorCode, bytesWritten] =
+    const auto [writeErrorCode, bytesWritten] =
         ProcessWriteIntoCheck::writeInto<2>(pipe, "333\r\n");
-    assert(errorCode == cu0::Process::WriteError::NO_ERROR);
+    assert(writeErrorCode == cu0::Process::WriteError::NO_ERROR);
     assert(bytesWritten == 5);
     processWriteIntoCheck.wait();
     assert(processWriteIntoCheck.exitCode().value() == 64);
-    assert(processWriteIntoCheck.stdout() == "333");
-    assert(processWriteIntoCheck.stderr() == "333333");
+    const auto [outStr, stdoutErrorCode] = processWriteIntoCheck.stdout();
+    assert(outStr == "333");
+    assert(stdoutErrorCode == cu0::Process::ReadError::NO_ERROR);
+    const auto [errStr, stderrErrorCode] = processWriteIntoCheck.stderr();
+    assert(errStr == "333333");
+    assert(stderrErrorCode == cu0::Process::ReadError::NO_ERROR);
   }
   {
     const auto executableWithExitCode64 = cu0::Executable{
@@ -289,8 +293,12 @@ int main(int argc, char** argv) {
     assert(bytesWritten == 5);
     processWriteIntoCheck.wait();
     assert(processWriteIntoCheck.exitCode().value() == 64);
-    assert(processWriteIntoCheck.stdout() == "333");
-    assert(processWriteIntoCheck.stderr() == "333333");
+    const auto [outStr, stdoutErrorCode] = processWriteIntoCheck.stdout();
+    assert(outStr == "333");
+    assert(stdoutErrorCode == cu0::Process::ReadError::NO_ERROR);
+    const auto [errStr, stderrErrorCode] = processWriteIntoCheck.stderr();
+    assert(errStr == "333333");
+    assert(stderrErrorCode == cu0::Process::ReadError::NO_ERROR);
   }
   {
     const auto executableWithExitCode64 = cu0::Executable{
@@ -310,8 +318,12 @@ int main(int argc, char** argv) {
     assert(bytesWritten == 5);
     processWriteIntoCheck.wait();
     assert(processWriteIntoCheck.exitCode().value() == 64);
-    assert(processWriteIntoCheck.stdout() == "333");
-    assert(processWriteIntoCheck.stderr() == "333333");
+    const auto [outStr, stdoutErrorCode] = processWriteIntoCheck.stdout();
+    assert(outStr == "333");
+    assert(stdoutErrorCode == cu0::Process::ReadError::NO_ERROR);
+    const auto [errStr, stderrErrorCode] = processWriteIntoCheck.stderr();
+    assert(errStr == "333333");
+    assert(stderrErrorCode == cu0::Process::ReadError::NO_ERROR);
   }
   {
     const auto executableWithExitCode64 = cu0::Executable{
@@ -331,8 +343,12 @@ int main(int argc, char** argv) {
     assert(bytesWritten == 5);
     processWriteIntoCheck.wait();
     assert(processWriteIntoCheck.exitCode().value() == 64);
-    assert(processWriteIntoCheck.stdout() == "333");
-    assert(processWriteIntoCheck.stderr() == "333333");
+    const auto [outStr, stdoutErrorCode] = processWriteIntoCheck.stdout();
+    assert(outStr == "333");
+    assert(stdoutErrorCode == cu0::Process::ReadError::NO_ERROR);
+    const auto [errStr, stderrErrorCode] = processWriteIntoCheck.stderr();
+    assert(errStr == "333333");
+    assert(stderrErrorCode == cu0::Process::ReadError::NO_ERROR);
   }
   {
     const auto executableWithExitCode64 = cu0::Executable{
@@ -352,8 +368,12 @@ int main(int argc, char** argv) {
     assert(bytesWritten == 5);
     processWriteIntoCheck.wait();
     assert(processWriteIntoCheck.exitCode().value() == 64);
-    assert(processWriteIntoCheck.stdout() == "333");
-    assert(processWriteIntoCheck.stderr() == "333333");
+    const auto [outStr, stdoutErrorCode] = processWriteIntoCheck.stdout();
+    assert(outStr == "333");
+    assert(stdoutErrorCode == cu0::Process::ReadError::NO_ERROR);
+    const auto [errStr, stderrErrorCode] = processWriteIntoCheck.stderr();
+    assert(errStr == "333333");
+    assert(stderrErrorCode == cu0::Process::ReadError::NO_ERROR);
   }
   {
     const auto executableWithExitCode64 = cu0::Executable{
@@ -371,8 +391,12 @@ int main(int argc, char** argv) {
     assert(bytesWritten == 4);
     processWithExitCode64.wait();
     assert(processWithExitCode64.exitCode().value() == 64);
-    assert(processWithExitCode64.stdout() == "64");
-    assert(processWithExitCode64.stderr() == "6464");
+    const auto [outStr, stdoutErrorCode] = processWithExitCode64.stdout();
+    assert(outStr == "64");
+    assert(stdoutErrorCode == cu0::Process::ReadError::NO_ERROR);
+    const auto [errStr, stderrErrorCode] = processWithExitCode64.stderr();
+    assert(errStr == "6464");
+    assert(stderrErrorCode == cu0::Process::ReadError::NO_ERROR);
   }
 #else
 #warning <unistd.h> is not found => \
@@ -386,15 +410,29 @@ int main(int argc, char** argv) {
 #if __has_include(<unistd.h>)
   std::cout << thisProcess.pid();
   std::cout.flush();
-  assert(thisProcess.stdout().empty());
+  const auto [outStr, stdoutErrorCode] = thisProcess.stdout();
+  assert(outStr.empty());
   std::cerr << thisProcess.pid() << thisProcess.pid();
   std::cerr.flush();
-  assert(thisProcess.stderr().empty());
+  const auto [errStr, stderrErrorCode] = thisProcess.stderr();
+  assert(outStr.empty());
 
-  assert(processWithExitCodeZero.stdout() == "0");
-  assert(processWithExitCodeZero.stderr() == "00");
-  assert(processWithExitCodeOne.stdout() == "1");
-  assert(processWithExitCodeOne.stderr() == "11");
+  const auto [zeroOutStr, zeroStdoutErrorCode] =
+      processWithExitCodeZero.stdout();
+  assert(zeroOutStr == "0");
+  assert(zeroStdoutErrorCode == cu0::Process::ReadError::NO_ERROR);
+  const auto [zeroErrStr, zeroStderrErrorCode] =
+      processWithExitCodeZero.stderr();
+  assert(zeroErrStr == "00");
+  assert(zeroStderrErrorCode == cu0::Process::ReadError::NO_ERROR);
+  const auto [oneOutStr, oneStdoutErrorCode] =
+      processWithExitCodeOne.stdout();
+  assert(oneOutStr == "1");
+  assert(oneStdoutErrorCode == cu0::Process::ReadError::NO_ERROR);
+  const auto [oneErrStr, oneStderrErrorCode] =
+      processWithExitCodeOne.stderr();
+  assert(oneErrStr == "11");
+  assert(oneStderrErrorCode == cu0::Process::ReadError::NO_ERROR);
 
   struct ProcessReadFromCheck : public cu0::Process {
     using cu0::Process::readFrom;
@@ -419,7 +457,9 @@ int main(int argc, char** argv) {
     const auto& processReadFromCheck =
         ProcessReadFromCheck{std::move(processWithExitCode255)};
     const auto& pipe = processReadFromCheck.stdoutPipe();
-    assert(ProcessReadFromCheck::readFrom<2>(pipe) == "255");
+    const auto [str, errorCode] = ProcessReadFromCheck::readFrom<2>(pipe);
+    assert(str == "255");
+    assert(errorCode == cu0::Process::ReadError::NO_ERROR);
   }
   {
     const auto executableWithExitCode255 = cu0::Executable{
@@ -436,7 +476,9 @@ int main(int argc, char** argv) {
     const auto& processReadFromCheck =
         ProcessReadFromCheck{std::move(processWithExitCode255)};;
     const auto& pipe = processReadFromCheck.stdoutPipe();
-    assert(ProcessReadFromCheck::readFrom<3>(pipe) == "255");
+    const auto [str, errorCode] = ProcessReadFromCheck::readFrom<3>(pipe);
+    assert(str == "255");
+    assert(errorCode == cu0::Process::ReadError::NO_ERROR);
   }
   {
     const auto executableWithExitCode255 = cu0::Executable{
@@ -453,7 +495,9 @@ int main(int argc, char** argv) {
     const auto& processReadFromCheck =
         ProcessReadFromCheck{std::move(processWithExitCode255)};
     const auto& pipe = processReadFromCheck.stdoutPipe();
-    assert(ProcessReadFromCheck::readFrom<4>(pipe) == "255");
+    const auto [str, errorCode] = ProcessReadFromCheck::readFrom<4>(pipe);
+    assert(str == "255");
+    assert(errorCode == cu0::Process::ReadError::NO_ERROR);
   }
   {
     const auto executableWithExitCode255 = cu0::Executable{
@@ -470,7 +514,9 @@ int main(int argc, char** argv) {
     const auto& processReadFromCheck =
         ProcessReadFromCheck{std::move(processWithExitCode255)};
     const auto& pipe = processReadFromCheck.stdoutPipe();
-    assert(ProcessReadFromCheck::readFrom<1024>(pipe) == "255");
+    const auto [str, errorCode] = ProcessReadFromCheck::readFrom<1024>(pipe);
+    assert(str == "255");
+    assert(errorCode == cu0::Process::ReadError::NO_ERROR);
   }
   {
     const auto executableWithExitCode255 = cu0::Executable{
@@ -487,7 +533,9 @@ int main(int argc, char** argv) {
     const auto& processReadFromCheck =
         ProcessReadFromCheck{std::move(processWithExitCode255)};
     const auto& pipe = processReadFromCheck.stdoutPipe();
-    assert(ProcessReadFromCheck::readFrom<8192>(pipe) == "255");
+    const auto [str, errorCode] = ProcessReadFromCheck::readFrom<8192>(pipe);
+    assert(str == "255");
+    assert(errorCode == cu0::Process::ReadError::NO_ERROR);
   }
 #else
 #warning <unistd.h> is not found => \

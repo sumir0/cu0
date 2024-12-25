@@ -188,11 +188,14 @@ int main() {
   //! @note not supported on all platforms yet
   //! @note stdout contains standard output of the created process
   //!     at the moment of call
-  const auto output = someProcess.stdout();
-  if (output.empty()) {
+  const auto [outStr, errorCode] = someProcess.stdout();
+  if (errorCode != cu0::Process::ReadError::NO_ERROR) {
+    std::cout << "Error: data was not fully received from the stdout" << '\n';
+  }
+  if (outStr.empty()) {
     std::cout << "Stdout of the created process is empty" << '\n';
   } else {
-    std::cout << "Stdout of the created process: " << output << '\n';
+    std::cout << "Stdout of the created process: " << outStr << '\n';
   }
 }
 ```
@@ -216,8 +219,7 @@ int main() {
   //! @note stdin passes an input to the stdin of the process
   const auto [errorCode, bytesWritten] = someProcess.stdin("someInput");
   if (errorCode != cu0::Process::WriteError::NO_ERROR) {
-    std::cout <<
-        "Error: the data was not fully passed to stdin of the process" << '\n';
+    std::cout << "Error: data was not fully passed to the stdin" << '\n';
   }
 }
 ```

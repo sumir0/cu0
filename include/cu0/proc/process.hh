@@ -132,6 +132,39 @@ public:
 #endif
 #ifdef __unix__
 #if __has_include(<unistd.h>)
+  enum struct ReadError {
+    NO_ERROR = 0, //! no error
+    AGAIN = EAGAIN, //! @see EAGAIN
+    BADF = EBADF, //! @see EBADF
+    BADMSG = EBADMSG, //! @see EBADMSG
+    INTR = EINTR, //! @see EINTR
+    INVAL = EINVAL, //! @see EINVAL
+    IO = EIO, //! @see EIO
+    ISDIR = EISDIR, //! @see EISDIR
+    OVERFLOW = EOVERFLOW, //! @see EOVERFLOW
+#if EWOULDBLOCK != EAGAIN
+    WOULDBLOCK = EWOULDBLOCK, //! @see EWOULDBLOCK
+#endif
+    CONNRESET = ECONNRESET, //! @see ECONNRESET
+    NOTCONN = ENOTCONN, //! @see ENOTCONN
+    TIMEDOUT = ETIMEDOUT, //! @see ETIMEDOUT
+    NOBUFS = ENOBUFS, //! @see ENOBUFS
+    NOMEM = ENOMEM, //! @see ENOMEM
+    NXIO = ENXIO, //! @see ENXIO
+    DESTADDRREQ = EDESTADDRREQ, //! @see EDESTADDRREQ
+    DQUOT = EDQUOT, //! @see EDQUOT
+    FAULT = EFAULT, //! @see EFAULT
+    FBIG = EFBIG, //! @see EFBIG
+    NOSPC = ENOSPC, //! @see ENOSPC
+    PERM = EPERM, //! @see EPERM
+    PIPE = EPIPE, //! @see EPIPE
+    //! it is possible that a value is not listed in this enum ->
+    //!     for other error codes @see ::read()
+  };
+#endif
+#endif
+#ifdef __unix__
+#if __has_include(<unistd.h>)
   /*!
    * @brief constructs an instance using the current process in which
    *     this function is called
@@ -236,7 +269,7 @@ public:
   /*!
    * @brief stdin passes the specified input to the stdin
    * @param input is the input value
-   * @return result of Process::writeInto() @see Process::WriteInto()
+   * @return result of Process::writeInto() @see Process::writeInto()
    */
   std::tuple<WriteError, std::size_t> stdin(const std::string& input) const;
 #endif
@@ -245,18 +278,18 @@ public:
 #if __has_include(<unistd.h>)
   /*!
    * @brief stdout returns the value of the stdout
-   * @return stdout as a std::string
+   * @return result of Process::readFrom() @see Process::readFrom()
    */
-  std::string stdout() const;
+  std::tuple<std::string, ReadError> stdout() const;
 #endif
 #endif
 #ifdef __unix__
 #if __has_include(<unistd.h>)
   /*!
    * @brief stderr returns the value of the stderr
-   * @return stderr as a std::string
+   * @return result of Process::readFrom() @see Process::readFrom()
    */
-  std::string stderr() const;
+  std::tuple<std::string, ReadError> stderr() const;
 #endif
 #endif
 #ifdef __unix__
@@ -298,10 +331,17 @@ protected:
    * @brief readFrom reads from the specified pipe
    * @tparam BUFFER_SIZE is the buffer size for reading from the pipe
    * @param pipe is the pipe to read from
-   * @return read value as a std::string
+   * @return tuple containing read value and error code
+   *     if there were no errors ->
+   *         std::string contains read value
+   *         ReadError is equal to ReadError::NO_ERROR
+   *     if there was an error ->
+   *         std::string contains value that had been already read before
+   *             error occured
+   *         ReadError is equal to error code
    */
   template <std::size_t BUFFER_SIZE>
-  static std::string readFrom(const int& pipe);
+  static std::tuple<std::string, ReadError> readFrom(const int& pipe);
 #endif
 #endif
   /*!
@@ -364,14 +404,17 @@ inline Process Process::current() {
   //! writing to stdin of the same process is not supported yet ->
   //!     set stdin pipe to -1
   //! there will be no effect if stdin() is tried to be called
+  //! though some errors may be returned by a call
   ret.stdinPipe_ = -1;
   //! reading from stdout of the same process is not supported yet ->
   //!     set stdout pipe to -1
   //! there will be an empty string value if stdout() is tried to be called
+  //! though some errors may be returned by a call
   ret.stdoutPipe_ = -1;
   //! reading stderr of the same process is not supported yet ->
   //!     set stderr pipe to -1
   //! there will be an empty string value if stderr() is tried to be called
+  //! though some errors may be returned by a call
   ret.stderrPipe_ = -1;
   //! return the process
   return ret;
@@ -516,7 +559,8 @@ inline std::tuple<typename Process::WriteError, std::size_t> Process::stdin(
 
 #ifdef __unix__
 #if __has_include(<unistd.h>)
-inline std::string Process::stdout() const {
+inline std::tuple<std::string, typename Process::ReadError>
+Process::stdout() const {
   return Process::readFrom<1024>(this->stdoutPipe_);
 }
 #endif
@@ -524,7 +568,8 @@ inline std::string Process::stdout() const {
 
 #ifdef __unix__
 #if __has_include(<unistd.h>)
-inline std::string Process::stderr() const {
+inline std::tuple<std::string, typename Process::ReadError>
+Process::stderr() const {
   return Process::readFrom<1024>(this->stderrPipe_);
 }
 #endif
@@ -583,7 +628,8 @@ std::tuple<typename Process::WriteError, std::size_t> Process::writeInto(
 #ifdef __unix__
 #if __has_include(<unistd.h>)
 template <std::size_t BUFFER_SIZE>
-std::string Process::readFrom(const int& pipe) {
+inline std::tuple<std::string, typename Process::ReadError>
+Process::readFrom(const int& pipe) {
   auto oss = std::ostringstream{};
   ssize_t bytes;
   do {
@@ -591,14 +637,12 @@ std::string Process::readFrom(const int& pipe) {
     static_assert(BUFFER_SIZE > 1, "BUFFER_SIZE needs to have space for '\0'");
     bytes = ::read(pipe, buffer, BUFFER_SIZE - 1);
     if (bytes < 0) { //! read failed
-      [[maybe_unused]] const auto& error = errno;
-      //! no error handling
-      return {};
+      return { oss.str(), static_cast<ReadError>(errno), };
     }
     buffer[bytes] = '\0';
     oss << std::move(buffer);
   } while (bytes == BUFFER_SIZE - 1);
-  return oss.str();
+  return { oss.str(), ReadError::NO_ERROR, };
 }
 #endif
 #endif

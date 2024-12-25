@@ -29,11 +29,14 @@ int main() {
   //! @note not supported on all platforms yet
   //! @note stderr contains standard output of the created process
   //!     at the moment of call
-  const auto output = someProcess.stderr();
-  if (output.empty()) {
+  const auto [errStr, errorCode] = someProcess.stderr();
+  if (errorCode != cu0::Process::ReadError::NO_ERROR) {
+    std::cout << "Error: data was not fully received from the stderr" << '\n';
+  }
+  if (errStr.empty()) {
     std::cout << "Stderr of the created process is empty" << '\n';
   } else {
-    std::cout << "Stderr of the created process: " << output << '\n';
+    std::cout << "Stderr of the created process: " << errStr << '\n';
   }
 }
 
