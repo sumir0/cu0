@@ -19,9 +19,15 @@
 #warning <unistd.h> is not found => \
     cu0::Process::stdin() will not be supported
 #warning <unistd.h> is not found => \
+    cu0::Process::stdinCautious() will not be supported
+#warning <unistd.h> is not found => \
     cu0::Process::stdout() will not be supported
 #warning <unistd.h> is not found => \
+    cu0::Process::stdoutCautious() will not be supported
+#warning <unistd.h> is not found => \
     cu0::Process::stderr() will not be supported
+#warning <unistd.h> is not found => \
+    cu0::Process::stderrCautious() will not be supported
 #else
 #include <unistd.h>
 #endif
@@ -52,6 +58,8 @@
 #if !__has_include(<signal.h>)
 #warning <signal.h> is not found => \
     cu0::Process::signal() will not be supported
+#warning <signal.h> is not found => \
+    cu0::Process::signalCautious() will not be supported
 #else
 #include <signal.h>
 #endif
@@ -68,12 +76,22 @@
     cu0::Process::exitCode() will not be supported
 #warning __unix__ is not defined => \
     cu0::Process::terminationCode() will not be supported
-#warning <unistd.h> is not found => \
+#warning __unix__ is not defined => \
     cu0::Process::stdin() will not be supported
-#warning <unistd.h> is not found => \
+#warning __unix__ is not defined => \
+    cu0::Process::stdinCautious() will not be supported
+#warning __unix__ is not defined => \
     cu0::Process::stdout() will not be supported
-#warning <unistd.h> is not found => \
+#warning __unix__ is not defined => \
+    cu0::Process::stdoutCautious() will not be supported
+#warning __unix__ is not defined => \
     cu0::Process::stderr() will not be supported
+#warning __unix__ is not defined => \
+    cu0::Process::stderrCautious() will not be supported
+#warning __unix__ is not defined => \
+    cu0::Process::signal() will not be supported
+#warning __unix__ is not defined => \
+    cu0::Process::signalCautious() will not be supported
 #endif
 
 namespace cu0 {
@@ -173,7 +191,7 @@ public:
    *     this function is called
    * @note for the returned current process
    *     stdin(), stdout(), stderr() member functions are not supported yet
-   *     @see implementation details
+   *     @see implementation details of Process::current()
    * @return current process
    */
   [[nodiscard]] static Process current();
@@ -272,9 +290,29 @@ public:
   /*!
    * @brief stdin passes the specified input to the stdin
    * @param input is the input value
+   */
+  void stdin(const std::string& input) const;
+#endif
+#endif
+#ifdef __unix__
+#if __has_include(<unistd.h>)
+  /*!
+   * @brief stdin passes the specified input to the stdin
+   * @param input is the input value
    * @return result of Process::writeInto() @see Process::writeInto()
    */
-  std::tuple<WriteError, std::size_t> stdin(const std::string& input) const;
+  std::tuple<WriteError, std::size_t> stdinCautious(
+      const std::string& input
+  ) const;
+#endif
+#endif
+#ifdef __unix__
+#if __has_include(<unistd.h>)
+  /*!
+   * @brief stdout returns the value of the stdout
+   * @return string containing stdout value
+   */
+  std::string stdout() const;
 #endif
 #endif
 #ifdef __unix__
@@ -283,7 +321,16 @@ public:
    * @brief stdout returns the value of the stdout
    * @return result of Process::readFrom() @see Process::readFrom()
    */
-  std::tuple<std::string, ReadError> stdout() const;
+  std::tuple<std::string, ReadError> stdoutCautious() const;
+#endif
+#endif
+#ifdef __unix__
+#if __has_include(<unistd.h>)
+  /*!
+   * @brief stderr returns the value of the stderr
+   * @return string containing stderr value
+   */
+  std::string stderr() const;
 #endif
 #endif
 #ifdef __unix__
@@ -292,7 +339,16 @@ public:
    * @brief stderr returns the value of the stderr
    * @return result of Process::readFrom() @see Process::readFrom()
    */
-  std::tuple<std::string, ReadError> stderr() const;
+  std::tuple<std::string, ReadError> stderrCautious() const;
+#endif
+#endif
+#ifdef __unix__
+#if __has_include(<signal.h>)
+  /*!
+   * @brief signal sends the specified code as a signal to the process
+   * @param code is the signal to be sent
+   */
+  void signal(const int& code) const;
 #endif
 #endif
 #ifdef __unix__
@@ -304,7 +360,7 @@ public:
    *     if there were no errors -> SignalError::NO_ERROR
    *     if there was an error -> error code (not SignalError::NO_ERROR)
    */
-  SignalError signal(const int& code) const;
+  SignalError signalCautious(const int& code) const;
 #endif
 #endif
 protected:
@@ -313,19 +369,24 @@ protected:
   /*!
    * @brief writeInto writes the specified input into the specified pipe
    * @tparam BUFFER_SIZE is the buffer size for writing into the pipe
+   * @tparam Return is the type to be returned by this function
    * @param pipe is the pipe to write into
    * @param input is the data to write
-   * @return tuple containing
-   *     error code
-   *         if there were no errors -> WriteError::NO_ERROR
-   *         if there was an error -> errno (not WriteError::NO_ERROR)
-   *     number of bytes written
-   *         if there were no errors -> it should be equal to input size
-   *         if there was an error -> it should be equal to the number of
-   *             bytes that had already been written before an error occured
+   * @return
+   *     if Return == std::tuple<WriteError, std::size_t> ->
+   *         tuple containing
+   *             error code
+   *                 if there were no errors -> WriteError::NO_ERROR
+   *                 if there was an error -> errno (not WriteError::NO_ERROR)
+   *             number of bytes written
+   *                 if there were no errors -> it should be equal to input size
+   *                 if there was an error -> it should be equal to
+   *                     the number of bytes that had already
+   *                     been written before an error occured
+   *     if Return == void -> nothing
    */
-  template <std::size_t BUFFER_SIZE>
-  static std::tuple<WriteError, std::size_t> writeInto(
+  template <std::size_t BUFFER_SIZE, class Return>
+  static Return writeInto(
       const int& pipe,
       const std::string& input
   );
@@ -336,18 +397,22 @@ protected:
   /*!
    * @brief readFrom reads from the specified pipe
    * @tparam BUFFER_SIZE is the buffer size for reading from the pipe
+   * @tparam Return is the type to be returned by this function
    * @param pipe is the pipe to read from
-   * @return tuple containing read value and error code
-   *     if there were no errors ->
-   *         std::string contains read value
-   *         ReadError is equal to ReadError::NO_ERROR
-   *     if there was an error ->
-   *         std::string contains value that had been already read before
-   *             error occured
-   *         ReadError is equal to error code
+   * @return
+   *     if Return == std::tuple<std::string, ReadError> ->
+   *         tuple containing read value and error code
+   *         if there were no errors ->
+   *             std::string contains read value
+   *             ReadError is equal to ReadError::NO_ERROR
+   *         if there was an error ->
+   *             std::string contains value that had been already read before
+   *                 error occured
+   *             ReadError is equal to error code
+   *     if Return == std::string -> read value as std::string
    */
-  template <std::size_t BUFFER_SIZE>
-  static std::tuple<std::string, ReadError> readFrom(const int& pipe);
+  template <std::size_t BUFFER_SIZE, class Return>
+  static Return readFrom(const int& pipe);
 #endif
 #endif
   /*!
@@ -555,19 +620,30 @@ constexpr const std::optional<int>& Process::terminationCode() const {
 
 #ifdef __unix__
 #if __has_include(<unistd.h>)
-inline std::tuple<typename Process::WriteError, std::size_t> Process::stdin(
+inline void Process::stdin(const std::string& input) const {
+  return Process::writeInto<1024, void>(this->stdinPipe_, input);
+}
+#endif
+#endif
+
+#ifdef __unix__
+#if __has_include(<unistd.h>)
+inline std::tuple<typename Process::WriteError, std::size_t>
+Process::stdinCautious(
     const std::string& input
 ) const {
-  return Process::writeInto<1024>(this->stdinPipe_, input);
+  return Process::writeInto<1024, std::tuple<WriteError, std::size_t>>(
+      this->stdinPipe_, input
+  );
 }
 #endif
 #endif
 
 #ifdef __unix__
 #if __has_include(<unistd.h>)
-inline std::tuple<std::string, typename Process::ReadError>
+inline std::string
 Process::stdout() const {
-  return Process::readFrom<1024>(this->stdoutPipe_);
+  return Process::readFrom<1024, std::string>(this->stdoutPipe_);
 }
 #endif
 #endif
@@ -575,15 +651,46 @@ Process::stdout() const {
 #ifdef __unix__
 #if __has_include(<unistd.h>)
 inline std::tuple<std::string, typename Process::ReadError>
-Process::stderr() const {
-  return Process::readFrom<1024>(this->stderrPipe_);
+Process::stdoutCautious() const {
+  return Process::readFrom<1024, std::tuple<std::string, ReadError>>(
+      this->stdoutPipe_
+  );
+}
+#endif
+#endif
+
+#ifdef __unix__
+#if __has_include(<unistd.h>)
+inline std::string Process::stderr() const {
+  return Process::readFrom<1024, std::string>(this->stderrPipe_);
+}
+#endif
+#endif
+
+#ifdef __unix__
+#if __has_include(<unistd.h>)
+inline std::tuple<std::string, typename Process::ReadError>
+Process::stderrCautious() const {
+  return Process::readFrom<1024, std::tuple<std::string, ReadError>>(
+      this->stderrPipe_
+  );
 }
 #endif
 #endif
 
 #ifdef __unix__
 #if __has_include(<signal.h>)
-inline typename Process::SignalError Process::signal(const int& code) const {
+inline void Process::signal(const int& code) const {
+  ::kill(this->pid_, code);
+}
+#endif
+#endif
+
+#ifdef __unix__
+#if __has_include(<signal.h>)
+inline typename Process::SignalError Process::signalCautious(
+    const int& code
+) const {
   if (::kill(this->pid_, code) != 0) {
     return static_cast<SignalError>(errno);
   }
@@ -594,12 +701,19 @@ inline typename Process::SignalError Process::signal(const int& code) const {
 
 #ifdef __unix__
 #if __has_include(<unistd.h>)
-template <std::size_t BUFFER_SIZE>
-std::tuple<typename Process::WriteError, std::size_t> Process::writeInto(
+template <std::size_t BUFFER_SIZE, class Return>
+Return Process::writeInto(
     const int& pipe,
     const std::string& input
 ) {
-  auto bytesWritten = std::size_t{0};
+  static_assert(
+      std::is_same_v<Return, void> ||
+      std::is_same_v<Return, std::tuple<WriteError, std::size_t>>
+  );
+  [[maybe_unused]] std::size_t bytesWritten;
+  if constexpr (std::is_same_v<Return, std::tuple<WriteError, std::size_t>>) {
+    bytesWritten = std::size_t{0};
+  }
   char buffer[BUFFER_SIZE];
   for (auto i = 0u; i <= input.size() / BUFFER_SIZE; i++) {
     const auto data = input.substr(i * BUFFER_SIZE, BUFFER_SIZE);
@@ -619,26 +733,39 @@ std::tuple<typename Process::WriteError, std::size_t> Process::writeInto(
         writeResult = ::write(pipe, buffer + bytes, end - bytes)
     ) {
       if (writeResult < 0) {
-        bytesWritten += bytes;
-        return { static_cast<WriteError>(errno), bytesWritten, };
+        if constexpr (std::is_same_v<Return, void>) {
+          return;
+        } else { //! std::is_same_v<Return, std::tuple<WriteError, std::size_t>>
+          bytesWritten += bytes;
+          return { static_cast<WriteError>(errno), bytesWritten, };
+        }
       }
       bytes += writeResult;
       if (bytes >= static_cast<ssize_t>(end)) {
         break;
       }
     }
-    bytesWritten += bytes;
+    if constexpr (std::is_same_v<Return, std::tuple<WriteError, std::size_t>>) {
+      bytesWritten += bytes;
+    }
   }
-  return { WriteError::NO_ERROR, bytesWritten, };
+  if constexpr (std::is_same_v<Return, void>) {
+    return;
+  } else { //! std::is_same_v<Return, std::tuple<WriteError, std::size_t>>
+    return { WriteError::NO_ERROR, bytesWritten, };
+  }
 }
 #endif
 #endif
 
 #ifdef __unix__
 #if __has_include(<unistd.h>)
-template <std::size_t BUFFER_SIZE>
-inline std::tuple<std::string, typename Process::ReadError>
-Process::readFrom(const int& pipe) {
+template <std::size_t BUFFER_SIZE, class Return>
+inline Return Process::readFrom(const int& pipe) {
+  static_assert(
+      std::is_same_v<Return, std::string> ||
+      std::is_same_v<Return, std::tuple<std::string, ReadError>>
+  );
   auto oss = std::ostringstream{};
   ssize_t bytes;
   do {
@@ -646,12 +773,20 @@ Process::readFrom(const int& pipe) {
     static_assert(BUFFER_SIZE > 1, "BUFFER_SIZE needs to have space for '\0'");
     bytes = ::read(pipe, buffer, BUFFER_SIZE - 1);
     if (bytes < 0) { //! read failed
-      return { oss.str(), static_cast<ReadError>(errno), };
+      if constexpr (std::is_same_v<Return, std::string>) {
+        return oss.str();
+      } else { //! std::is_same_v<Return, std::tuple<std::string, ReadError>>
+        return { oss.str(), static_cast<ReadError>(errno), };
+      }
     }
     buffer[bytes] = '\0';
     oss << std::move(buffer);
   } while (bytes == BUFFER_SIZE - 1);
-  return { oss.str(), ReadError::NO_ERROR, };
+  if constexpr (std::is_same_v<Return, std::string>) {
+    return oss.str();
+  } else { //! std::is_same_v<Return, std::tuple<std::string, ReadError>>
+    return { oss.str(), ReadError::NO_ERROR, };
+  }
 }
 #endif
 #endif
@@ -673,7 +808,7 @@ inline Return Process::waitExitLoop() {
     if (pid == -1) {
       if constexpr (std::is_same_v<Return, WaitError>) {
         return static_cast<WaitError>(errno);
-      } else {
+      } else { //! std::is_same_v<Return, void>
         //! no error handling
         return;
       }
@@ -696,7 +831,7 @@ inline Return Process::waitExitLoop() {
   }
   if constexpr (std::is_same_v<Return, WaitError>) {
     return WaitError::NO_ERROR;
-  } else {
+  } else { //! std::is_same_v<Return, void>
     return;
   }
 }

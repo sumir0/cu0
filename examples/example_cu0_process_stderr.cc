@@ -27,12 +27,9 @@ int main() {
   }
   const auto& someProcess = std::get<cu0::Process>(variant);
   //! @note not supported on all platforms yet
-  //! @note stderr contains standard output of the created process
+  //! @note stderr returns standard error output of the created process
   //!     at the moment of call
-  const auto [errStr, errorCode] = someProcess.stderr();
-  if (errorCode != cu0::Process::ReadError::NO_ERROR) {
-    std::cout << "Error: data was not fully received from the stderr" << '\n';
-  }
+  const auto errStr = someProcess.stderr();
   if (errStr.empty()) {
     std::cout << "Stderr of the created process is empty" << '\n';
   } else {

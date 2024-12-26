@@ -28,10 +28,7 @@ int main() {
   const auto& someProcess = std::get<cu0::Process>(variant);
   //! @note not supported on all platforms yet
   //! @note stdin passes an input to the stdin of the process
-  const auto [errorCode, bytesWritten] = someProcess.stdin("someInput");
-  if (errorCode != cu0::Process::WriteError::NO_ERROR) {
-    std::cout << "Error: data was not fully passed to the stdin" << '\n';
-  }
+  someProcess.stdin("someInput");
 }
 
 #endif

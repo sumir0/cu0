@@ -188,12 +188,9 @@ int main() {
   //! @note not supported on all platforms yet
   //! @note stdout contains standard output of the created process
   //!     at the moment of call
-  const auto [outStr, errorCode] = someProcess.stdout();
-  if (errorCode != cu0::Process::ReadError::NO_ERROR) {
-    std::cout << "Error: data was not fully received from the stdout" << '\n';
-  }
+  const auto outStr = someProcess.stdout();
   if (outStr.empty()) {
-    std::cout << "Stdout of the created process is empty" << '\n';
+    std::cout << "Error or stdout of the created process is empty" << '\n';
   } else {
     std::cout << "Stdout of the created process: " << outStr << '\n';
   }
@@ -217,10 +214,7 @@ int main() {
   const auto& someProcess = std::get<cu0::Process>(variant);
   //! @note not supported on all platforms yet
   //! @note stdin passes an input to the stdin of the process
-  const auto [errorCode, bytesWritten] = someProcess.stdin("someInput");
-  if (errorCode != cu0::Process::WriteError::NO_ERROR) {
-    std::cout << "Error: data was not fully passed to the stdin" << '\n';
-  }
+  someProcess.stdin("someInput");
 }
 ```
 
@@ -241,10 +235,7 @@ int main() {
   const auto& someProcess = std::get<cu0::Process>(variant);
   //! @note not supported on all platforms yet
   //! @note signals the SIGTERM signal to the process
-  const auto errorCode = someProcess.signal(SIGTERM);
-  if (errorCode != cu0::Process::SignalError::NO_ERROR) {
-    std::cout << "Error: the signal was not sent" << '\n';
-  }
+  someProcess.signal(SIGTERM);
 }
 ```
 

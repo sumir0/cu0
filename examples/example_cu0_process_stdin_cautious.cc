@@ -9,12 +9,12 @@
 //!         no feature-related compile-time warnings will be present
 #ifndef __unix__
 #warning __unix__ is not defined => \
-    cu0::Process::signal() will not be used in the example
+    cu0::Process::stdinCautious() will not be used in the example
 int main() {}
 #else
-#if !__has_include(<signal.h>)
-#warning <signal.h> is not found => \
-    cu0::Process::signal() will not be used in the example
+#if !__has_include(<unistd.h>)
+#warning <unistd.h> is not found => \
+    cu0::Process::stdinCautious() will not be used in the example
 int main() {}
 #else
 
@@ -27,8 +27,11 @@ int main() {
   }
   const auto& someProcess = std::get<cu0::Process>(variant);
   //! @note not supported on all platforms yet
-  //! @note signals the SIGTERM signal to the process
-  someProcess.signal(SIGTERM);
+  //! @note stdin passes an input to the stdin of the process
+  const auto [errorCode, bytesWritten] = someProcess.stdinCautious("someInput");
+  if (errorCode != cu0::Process::WriteError::NO_ERROR) {
+    std::cout << "Error: data was not fully passed to the stdin" << '\n';
+  }
 }
 
 #endif
