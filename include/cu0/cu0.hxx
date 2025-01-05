@@ -3,6 +3,7 @@
 
 #include <cu0/env.hxx>
 #include <cu0/proc.hxx>
+#include <cu0/time.hxx>
 
 namespace cu0 {}
 
