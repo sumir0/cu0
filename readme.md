@@ -250,7 +250,7 @@ int main() {
 
 int main() {
   //! create timer set for approximately 2 seconds
-  auto timer = cu0::BlockCoarseTimer<std::int64_t, std::ratio<1, 1>>{
+  constexpr auto timer = cu0::BlockCoarseTimer<std::int64_t, std::ratio<1, 1>>{
     std::chrono::duration<std::int64_t>{2}
   };
   //! measure start time
@@ -262,6 +262,35 @@ int main() {
       std::chrono::duration<double>
   >(std::chrono::high_resolution_clock::now() - start);
   
+  std::cout << "Elapsed: " << elapsed << '\n';
+}
+```
+
+### cu0::AsyncCoarseTimer
+
+#### Wait for a timer by sleeping
+
+`examples/example_cu0_async_coarse_timer.cc`
+```c++
+#include <cu0/time/async_coarse_timer.hh>
+#include <iostream>
+
+int main() {
+  //! create timer set for approximately 2000 milliseconds
+  auto timer = cu0::AsyncCoarseTimer<std::int64_t, std::milli>{
+    std::chrono::duration<std::int64_t, std::milli>{2000}
+  };
+  //! measure start time
+  const auto start = std::chrono::high_resolution_clock::now();
+  //! launch the timer
+  timer.launch();
+  //! wait for the timer
+  timer.wait(); //! will block until the timer is up
+  //! measure elapsed time
+  const auto elapsed = std::chrono::duration_cast<
+      std::chrono::duration<double>
+  >(std::chrono::high_resolution_clock::now() - start);
+
   std::cout << "Elapsed: " << elapsed << '\n';
 }
 ```

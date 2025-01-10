@@ -1,15 +1,17 @@
-#include <cu0/time/block_coarse_timer.hh>
+#include <cu0/time/async_coarse_timer.hh>
 #include <iostream>
 
 int main() {
-  //! create timer set for approximately 2 seconds
-  constexpr auto timer = cu0::BlockCoarseTimer<std::int64_t, std::ratio<1, 1>>{
-    std::chrono::duration<std::int64_t>{2}
+  //! create timer set for approximately 2000 milliseconds
+  auto timer = cu0::AsyncCoarseTimer<std::int64_t, std::milli>{
+    std::chrono::duration<std::int64_t, std::milli>{2000}
   };
   //! measure start time
   const auto start = std::chrono::high_resolution_clock::now();
   //! launch the timer
-  timer.launch(); //! will block until the timer is up
+  timer.launch();
+  //! wait for the timer
+  timer.wait(); //! will block until the timer is up
   //! measure elapsed time
   const auto elapsed = std::chrono::duration_cast<
       std::chrono::duration<double>
