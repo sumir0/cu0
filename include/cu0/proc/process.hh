@@ -770,7 +770,7 @@ inline Return Process::readFrom(const int& pipe) {
   ssize_t bytes;
   do {
     char buffer[BUFFER_SIZE];
-    static_assert(BUFFER_SIZE > 1, "BUFFER_SIZE needs to have space for '\0'");
+    static_assert(BUFFER_SIZE > 1, "BUFFER_SIZE needs to have space for '\\0'");
     bytes = ::read(pipe, buffer, BUFFER_SIZE - 1);
     if (bytes < 0) { //! read failed
       if constexpr (std::is_same_v<Return, std::string>) {
