@@ -32,6 +32,9 @@ int main(int argc, char** argv) {
   assert(std::holds_alternative<cu0::Process>(created));
   auto& createdProcess = std::get<cu0::Process>(created);
   assert(createdProcess.pid() != 0);
+  assert(static_cast<bool>(createdProcess.stdinPipe()));
+  assert(static_cast<bool>(createdProcess.stdoutPipe()));
+  assert(static_cast<bool>(createdProcess.stderrPipe()));
 
   const auto executableWithArguments = cu0::Executable{
     .arguments = { "arg1", "arg2", "arg3", },
@@ -42,6 +45,9 @@ int main(int argc, char** argv) {
   auto& createdWithArgumentsProcess =
       std::get<cu0::Process>(createdWithArguments);
   assert(createdWithArgumentsProcess.pid() != 0);
+  assert(static_cast<bool>(createdWithArgumentsProcess.stdinPipe()));
+  assert(static_cast<bool>(createdWithArgumentsProcess.stdoutPipe()));
+  assert(static_cast<bool>(createdWithArgumentsProcess.stderrPipe()));
 
   const auto executableWithEnvironment = cu0::Executable{
     .environment = { { "k1", "v1", }, { "k2", "v2", }, { "k3", "v3", } },
@@ -52,6 +58,9 @@ int main(int argc, char** argv) {
   auto& createdWithEnvironmentProcess =
       std::get<cu0::Process>(createdWithEnvironment);
   assert(createdWithEnvironmentProcess.pid() != 0);
+  assert(static_cast<bool>(createdWithEnvironmentProcess.stdinPipe()));
+  assert(static_cast<bool>(createdWithEnvironmentProcess.stdoutPipe()));
+  assert(static_cast<bool>(createdWithEnvironmentProcess.stderrPipe()));
 
   const auto executableWithArgumentsAndEnvironment = cu0::Executable{
     .arguments = { "arg1", "arg2", "arg3", },
@@ -65,11 +74,82 @@ int main(int argc, char** argv) {
   auto& createdWithArgumentsAndEnvironmentProcess =
       std::get<cu0::Process>(createdWithArgumentsAndEnvironment);
   assert(createdWithArgumentsAndEnvironmentProcess.pid() != 0);
+  assert(static_cast<bool>(
+      createdWithArgumentsAndEnvironmentProcess.stdinPipe()
+  ));
+  assert(static_cast<bool>(
+      createdWithArgumentsAndEnvironmentProcess.stdoutPipe()
+  ));
+  assert(static_cast<bool>(
+      createdWithArgumentsAndEnvironmentProcess.stderrPipe()
+  ));
 #else
 #warning <unistd.h> is not found => cu0::Process::create() will not be checked
 #endif
 #else
 #warning __unix__ is not defined => cu0::Process::create() will not be checked
+#endif
+
+#ifdef __unix__
+#if __has_include(<unistd.h>)
+  const auto createdPipeless = cu0::Process::createPipeless(executable);
+  assert(std::holds_alternative<cu0::Process>(createdPipeless));
+  const auto& createdProcessPipeless = std::get<cu0::Process>(createdPipeless);
+  assert(createdProcessPipeless.pid() != 0);
+  assert(!static_cast<bool>(createdProcessPipeless.stdinPipe()));
+  assert(!static_cast<bool>(createdProcessPipeless.stdoutPipe()));
+  assert(!static_cast<bool>(createdProcessPipeless.stderrPipe()));
+
+  const auto createdWithArgumentsPipeless =
+      cu0::Process::createPipeless(executableWithArguments);
+  assert(std::holds_alternative<cu0::Process>(createdWithArgumentsPipeless));
+  const auto& createdWithArgumentsProcessPipeless =
+      std::get<cu0::Process>(createdWithArgumentsPipeless);
+  assert(createdWithArgumentsProcessPipeless.pid() != 0);
+  assert(!static_cast<bool>(createdWithArgumentsProcessPipeless.stdinPipe()));
+  assert(!static_cast<bool>(createdWithArgumentsProcessPipeless.stdoutPipe()));
+  assert(!static_cast<bool>(createdWithArgumentsProcessPipeless.stderrPipe()));
+
+  const auto createdWithEnvironmentPipeless =
+      cu0::Process::createPipeless(executableWithEnvironment);
+  assert(std::holds_alternative<cu0::Process>(createdWithEnvironmentPipeless));
+  const auto& createdWithEnvironmentProcessPipeless =
+      std::get<cu0::Process>(createdWithEnvironmentPipeless);
+  assert(createdWithEnvironmentProcessPipeless.pid() != 0);
+  assert(!static_cast<bool>(
+      createdWithEnvironmentProcessPipeless.stdinPipe()
+  ));
+  assert(!static_cast<bool>(
+      createdWithEnvironmentProcessPipeless.stdoutPipe()
+  ));
+  assert(!static_cast<bool>(
+      createdWithEnvironmentProcessPipeless.stderrPipe()
+  ));
+
+  const auto createdWithArgumentsAndEnvironmentPipeless =
+      cu0::Process::createPipeless(executableWithArgumentsAndEnvironment);
+  assert(std::holds_alternative<cu0::Process>(
+      createdWithArgumentsAndEnvironmentPipeless
+  ));
+  const auto& createdWithArgumentsAndEnvironmentProcessPipeless =
+      std::get<cu0::Process>(createdWithArgumentsAndEnvironmentPipeless);
+  assert(createdWithArgumentsAndEnvironmentProcessPipeless.pid() != 0);
+  assert(!static_cast<bool>(
+      createdWithArgumentsAndEnvironmentProcessPipeless.stdinPipe()
+  ));
+  assert(!static_cast<bool>(
+      createdWithArgumentsAndEnvironmentProcessPipeless.stdoutPipe()
+  ));
+  assert(!static_cast<bool>(
+      createdWithArgumentsAndEnvironmentProcessPipeless.stderrPipe()
+  ));
+#else
+#warning <unistd.h> is not found => \
+    cu0::Process::createPipeless() will not be checked
+#endif
+#else
+#warning __unix__ is not defined => \
+    cu0::Process::createPipeless() will not be checked
 #endif
 
   constexpr auto SLEEP_DURATION = 8; //! [s]
