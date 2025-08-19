@@ -18,22 +18,20 @@ make -C <path-to-build-directory> test
 
 `examples/example_cu0_environment_variable_cached_value.cc`
 ```c++
-#include <cu0/env.hxx>
+#include <cu0/env/environment_variable.hh>
 #include <iostream>
 
 int main() {
-  //! @note environment variable may not be set
-  //! read value of the environment variable with the key 'KEY'
+  //! @note an environment variable may not be set
+  //! @note read value of the environment variable with the key 'KEY'
+  const auto environmentVariable = cu0::EnvironmentVariable::synced("KEY");
   //! @note if the environment variable is not set ->
-  //!     empty string is returned
-  //! @note if the returned cached value is empty ->
-  //!     it does not mean that the environment variable was not set,
-  //!     it may be set to the empty value
-  //! cachedValue contains value of the environment variable at the time of
-  //!     cu0::EnvironmentVariable instance construction
-  const auto& cachedValue = cu0::EnvironmentVariable{"KEY"}.cachedValue();
+  //!     an empty optional is returned
+  //! @note cached contains the value of the environment variable at the time of
+  //!     last sync with the environment @see EnvironmentVariable::sync
+  const auto& cached = environmentVariable.cached();
   std::cout << "Value of the environment variable 'KEY': " <<
-      (cachedValue.empty() ? "<empty-or-not-set>" : cachedValue) << '\n';
+      (cached.has_value() ? cached.value() : "<not-set>") << '\n';
 }
 ```
 
@@ -41,17 +39,40 @@ int main() {
 
 `examples/example_cu0_environment_variable_sync.cc`
 ```c++
-#include <cu0/env.hxx>
+#include <cu0/env/environment_variable.hh>
 #include <iostream>
 
 int main() {
   //! @note environment variable may not be set
-  auto environmentVariable = cu0::EnvironmentVariable{"KEY"};
-  //! wait for external environment variable change and
-  //! sync value of the environment variable with the key 'KEY'
-  const auto& syncedValue = cu0::EnvironmentVariable{"KEY"}.sync();
+  auto environmentVariable = cu0::EnvironmentVariable::unsynced("KEY");
+  //! @note wait for external environment variable change and
+  //!     sync value of the environment variable with the key 'KEY'
+  const auto& synced = environmentVariable.sync();
   std::cout << "Synced value of the environment variable 'KEY': " <<
-      (syncedValue.empty() ? "<empty-or-not-set>" : syncedValue) << '\n';
+      (synced.has_value() ? synced.value() : "<not-set>") << '\n';
+}
+```
+
+#### Set an environment variable value
+
+`examples/example_cu0_environment_variable_sync.cc`
+```c++
+#include <cu0/env/environment_variable.hh>
+#include <iostream>
+
+int main() {
+  //! @note not supported on all platforms yet
+  //! @note create an environment variable without syncing with the environment
+  //!     because we will set the value of the environment variable later
+  //!     no syncing before that is needed
+  auto environmentVariable = cu0::EnvironmentVariable::unsynced("KEY");
+  //! @note set the value of the environment variable
+  //! @note automatically updates the environment with the value
+  environmentVariable.set("some_value");
+  //! @note access cached value of the environment variable
+  const auto& cached = environmentVariable.cached();
+  std::cout << "Value of the environment variable 'KEY': " <<
+      (cached.has_value() ? cached.value() : "<not-set>") << '\n';
 }
 ```
 
@@ -110,7 +131,7 @@ int main() {
 
 `examples/example_cu0_process_create.cc`
 ```c++
-#include <cu0/proc.hxx>
+#include <cu0/proc/process.hh>
 
 int main() {
   //! @note not supported on all platforms yet
@@ -133,7 +154,7 @@ int main() {
 
 `examples/example_cu0_process_current.cc`
 ```c++
-#include <cu0/proc.hxx>
+#include <cu0/proc/process.hh>
 
 int main() {
   //! @note not supported on all platforms yet
@@ -147,7 +168,7 @@ int main() {
 
 `examples/example_cu0_process_exit_code.cc`
 ```c++
-#include <cu0/proc.hxx>
+#include <cu0/proc/process.hh>
 
 int main() {
   auto variant = cu0::Process::create(cu0::Executable{
@@ -174,7 +195,7 @@ int main() {
 
 `examples/example_cu0_process_stdout.cc`
 ```c++
-#include <cu0/proc.hxx>
+#include <cu0/proc/process.hh>
 #include <iostream>
 
 int main() {
@@ -201,7 +222,7 @@ int main() {
 
 `examples/example_cu0_process_stdin.cc`
 ```c++
-#include <cu0/proc.hxx>
+#include <cu0/proc/process.hh>
 #include <iostream>
 
 int main() {
@@ -222,7 +243,7 @@ int main() {
 
 `examples/example_cu0_process_signal.cc`
 ```c++
-#include <cu0/proc.hxx>
+#include <cu0/proc/process.hh>
 #include <iostream>
 
 int main() {

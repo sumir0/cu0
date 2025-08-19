@@ -75,25 +75,33 @@ inline Executable findBy(const std::string& name) {
   if (!candidate.binary.empty()) {
     return candidate;
   }
-  auto pathsLeft = EnvironmentVariable{"PATH"}.cachedValue();
-  while (!pathsLeft.empty()) {
+  const auto environmentVariable = EnvironmentVariable::synced("PATH");
+  const auto& optional = environmentVariable.cached();
+  if (!optional.has_value()) {
+    return {};
+  }
+  auto pathsLeft = optional.value();
+  if (pathsLeft.empty()) {
+    return {};
+  }
+  while (true) {
 #ifdef __unix__
     const auto pos = pathsLeft.find(':');
 #else
     const auto pos = pathsLeft.find(';');
 #endif
     const auto path = pathsLeft.substr(0, pos);
-    if (pos == std::string::npos) {
-      pathsLeft = {};
-    } else {
-      pathsLeft.erase(0, pos + 1);
-    }
     if (
         std::filesystem::is_directory(path) &&
         !(candidate = findBy(name, path)).binary.empty()
     ) {
       return candidate;
     }
+    if (pos == std::string::npos) {
+      break;
+    }
+    /// else
+    pathsLeft.erase(0, pos + 1);
   }
   return {};
 }

@@ -43,7 +43,11 @@ int main() {
   assert(uniqueExecutable.environment.empty());
 
   const auto bin = std::filesystem::path{"/usr/bin"};
-  const auto path = cu0::EnvironmentVariable{"PATH"}.cachedValue();
+  const auto pathEnvironmentVariable =
+      cu0::EnvironmentVariable::synced("PATH");
+  const auto path = pathEnvironmentVariable.cached().has_value() ?
+      pathEnvironmentVariable.cached().value() :
+      std::string{};
 
   const auto ls = bin / "ls";
   if (
