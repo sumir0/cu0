@@ -12,11 +12,33 @@ make -C <path-to-build-directory> test
 
 ## Features
 
+### cu0::currentEnvironment()
+
+#### Get a snapshot of the environment
+
+`examples/example_cu0_current_environment.cc`
+```c++
+#include <cu0/env/current_environment.hh>
+#include <iostream>
+
+int main() {
+  //! @note not supported on all platforms yet
+  //! @note environment variable contains current environment's key-value data
+  //! @note environment variable is not synchronized with the actual environment
+  //!     i.e. environment variable is a snapshot of the actual environment
+  const auto& environment = cu0::currentEnvironment();
+  //! iterate through the snapshot of the actual environment
+  for (const auto& [key, value] : environment) {
+    std::cout << "environment[" << key << "]" << "=" << value << '\n';
+  }
+}
+```
+
 ### cu0::EnvironmentVariable
 
 #### Get an environment variable value
 
-`examples/example_cu0_environment_variable_cached_value.cc`
+`examples/example_cu0_environment_variable_cached.cc`
 ```c++
 #include <cu0/env/environment_variable.hh>
 #include <iostream>
@@ -55,7 +77,7 @@ int main() {
 
 #### Set an environment variable value
 
-`examples/example_cu0_environment_variable_sync.cc`
+`examples/example_cu0_environment_variable_set.cc`
 ```c++
 #include <cu0/env/environment_variable.hh>
 #include <iostream>
@@ -137,7 +159,7 @@ int main() {
   //! @note not supported on all platforms yet
   //! @note executable can be run by a process
   const auto executable = cu0::Executable{ .binary = "a.out" };
-  //! @note optional contains a process if it was created
+  //! @note variant contains a process if it was created and error code else
   const std::variant<cu0::Process, cu0::Process::CreateError> variant =
       cu0::Process::create(executable);
   if (!std::holds_alternative<cu0::Process>(variant)) {

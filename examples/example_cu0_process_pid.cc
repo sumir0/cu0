@@ -1,4 +1,4 @@
-#include <cu0/proc.hxx>
+#include <cu0/proc/process.hh>
 #include <iostream>
 
 //! @note supported features may vary on different platforms

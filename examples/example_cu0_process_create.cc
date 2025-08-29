@@ -1,4 +1,4 @@
-#include <cu0/proc.hxx>
+#include <cu0/proc/process.hh>
 #include <iostream>
 
 //! @note supported features may vary on different platforms
@@ -22,7 +22,7 @@ int main() {
   //! @note not supported on all platforms yet
   //! @note executable can be run by a process
   const auto executable = cu0::Executable{ .binary = "a.out" };
-  //! @note optional contains a process if it was created
+  //! @note variant contains a process if it was created and error code else
   const std::variant<cu0::Process, cu0::Process::CreateError> variant =
       cu0::Process::create(executable);
   if (!std::holds_alternative<cu0::Process>(variant)) {
