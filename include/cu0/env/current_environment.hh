@@ -16,7 +16,7 @@ namespace cu0 {
 #if __has_include(<unistd.h>)
 /*!
  * @brief gets current environment
- * @return map of the current environment variables in form <key, value>
+ * @return map of the current environment variables in the form <key, value>
  */
 std::map<std::string, std::string> currentEnvironment();
 #endif

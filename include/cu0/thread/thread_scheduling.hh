@@ -57,7 +57,7 @@ public:
    */
   constexpr ThreadScheduling() = default;
   /*!
-   * @brief ctor using native handle
+   * @brief ctor using a native handle
    * @param nativeHandle is the native handle of a thread
    */
   constexpr ThreadScheduling(typename Thread::native_handle_type nativeHandle);
@@ -78,6 +78,9 @@ public:
   constexpr std::tuple<int, GetPriorityStatus> priority() const;
   /*!
    * @brief sets a priority of the thread @see nativeHandle_
+   * @param policy is the policy of the thread to be set @see Policy
+   * @param value is the priority to be set @note policy-specific,
+   *     some policies do not use the priority value
    * @return
    *    if a priority was set -> SetPriorityStatus::DONE
    *    else -> error value

@@ -40,6 +40,8 @@
     cu0::Process::exitCode() will not be supported
 #warning <sys/types.h> is not found => \
     cu0::Process::terminationCode() will not be supported
+#warning <sys/types.h> is not found => \
+    cu0::Process::stopCode() will not be supported
 #else
 #include <sys/types.h>
 #endif
@@ -52,6 +54,8 @@
     cu0::Process::exitCode() will not be supported
 #warning <sys/wait.h> is not found => \
     cu0::Process::terminationCode() will not be supported
+#warning <sys/wait.h> is not found => \
+    cu0::Process::stopCode() will not be supported
 #else
 #include <sys/wait.h>
 #endif
@@ -76,6 +80,8 @@
     cu0::Process::exitCode() will not be supported
 #warning __unix__ is not defined => \
     cu0::Process::terminationCode() will not be supported
+#warning __unix__ is not defined => \
+    cu0::Process::stopCode() will not be supported
 #warning __unix__ is not defined => \
     cu0::Process::stdin() will not be supported
 #warning __unix__ is not defined => \
@@ -708,6 +714,14 @@ constexpr const std::optional<int>& Process::terminationCode() const {
 #endif
 
 #ifdef __unix__
+#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
+constexpr const std::optional<int>& Process::stopCode() const {
+  return this->stopCode_;
+}
+#endif
+#endif
+
+#ifdef __unix__
 #if __has_include(<unistd.h>)
 inline void Process::stdin(const std::string& input) const {
   return Process::writeInto<1024, void>(this->stdinPipe_, input);
@@ -932,7 +946,13 @@ constexpr void Process::swap(Process&& other) {
   std::swap(this->stdinPipe_, other.stdinPipe_);
   std::swap(this->stdoutPipe_, other.stdoutPipe_);
   std::swap(this->stderrPipe_, other.stderrPipe_);
+#ifdef __unix__
+#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   std::swap(this->exitCode_, other.exitCode_);
+  std::swap(this->terminationCode_, other.terminationCode_);
+  std::swap(this->stopCode_, other.stopCode_);
+#endif
+#endif
 }
 
 } /// namespace cu0

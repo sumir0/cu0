@@ -986,5 +986,91 @@ int main(int argc, char** argv) {
     cu0::Process::terminationCode() will not be checked
 #endif
 
+  {
+    constexpr struct ProcessDataMembers {
+      unsigned pid;
+      int stdinPipe;
+      int stdoutPipe;
+      int stderrPipe;
+#ifdef __unix__
+#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
+      std::optional<int> exitCode;
+      std::optional<int> terminationCode;
+      std::optional<int> stopCode;
+#endif
+#endif
+    } processDataMembers{
+      .pid = 512,
+      .stdinPipe = 511,
+      .stdoutPipe = 510,
+      .stderrPipe = 509,
+#ifdef __unix__
+#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
+      .exitCode = 508,
+      .terminationCode = 507,
+      .stopCode = 506,
+#endif
+#endif
+    };
+    struct ProcessDataMembersSetter : public cu0::Process {
+      constexpr ProcessDataMembersSetter(ProcessDataMembers data) {
+        this->pid_ = std::move(data.pid);
+        this->stdinPipe_ = std::move(data.stdinPipe);
+        this->stdoutPipe_ = std::move(data.stdoutPipe);
+        this->stderrPipe_ = std::move(data.stderrPipe);
+#ifdef __unix__
+#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
+        this->exitCode_ = std::move(data.exitCode);
+        this->terminationCode_ = std::move(data.terminationCode);
+        this->stopCode_ = std::move(data.stopCode);
+#endif
+#endif
+      }
+    };
+    auto processWithCustomData =
+        ProcessDataMembersSetter{processDataMembers}; //! parameter is copied
+    auto otherProcessWithCustomData =
+        ProcessDataMembersSetter{processDataMembers}; //! parameter is copied
+    const auto movedWithCtor = cu0::Process(std::move(
+        processWithCustomData
+    ));
+    assert(movedWithCtor.pid() == processDataMembers.pid);
+    assert(movedWithCtor.stdinPipe() == processDataMembers.stdinPipe);
+    assert(movedWithCtor.stdoutPipe() == processDataMembers.stdoutPipe);
+    assert(movedWithCtor.stderrPipe() == processDataMembers.stderrPipe);
+#ifdef __unix__
+#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
+    assert(movedWithCtor.exitCode() == processDataMembers.exitCode);
+    assert(
+        movedWithCtor.terminationCode() == processDataMembers.terminationCode
+    );
+    assert(movedWithCtor.stopCode() == processDataMembers.stopCode);
+#endif
+#endif
+    const auto movedWithOperator = cu0::Process(std::move(
+        otherProcessWithCustomData
+    ));
+    assert(movedWithOperator.pid() == processDataMembers.pid);
+    assert(
+        movedWithOperator.stdinPipe() == processDataMembers.stdinPipe
+    );
+    assert(
+        movedWithOperator.stdoutPipe() == processDataMembers.stdoutPipe
+    );
+    assert(
+        movedWithOperator.stderrPipe() == processDataMembers.stderrPipe
+    );
+#ifdef __unix__
+#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
+    assert(movedWithOperator.exitCode() == processDataMembers.exitCode);
+    assert(
+        movedWithOperator.terminationCode() ==
+            processDataMembers.terminationCode
+    );
+    assert(movedWithOperator.stopCode() == processDataMembers.stopCode);
+#endif
+#endif
+  }
+
   return 0;
 }
