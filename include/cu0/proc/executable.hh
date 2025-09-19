@@ -30,6 +30,7 @@ namespace util {
  * @note if multiple executables are present with the specified name ->
  *     the first found executable is returned
  */
+[[nodiscard]]
 Executable findBy(const std::string& name);
 
 /*!
@@ -38,6 +39,7 @@ Executable findBy(const std::string& name);
  * @param directory is the directory where to look for an executable
  * @return executable with empty arguments and an empty environment
  */
+[[nodiscard]]
 Executable findBy(
     const std::string& name,
     const std::filesystem::path& directory
@@ -48,6 +50,7 @@ Executable findBy(
  * @param executable is the executable, arguments of which will be converted
  * @return tuple containing a ptr to an array and the size of that array
  */
+[[nodiscard]]
 std::tuple<std::unique_ptr<std::unique_ptr<char[]>[]>, std::size_t> argvOf(
     const Executable& executable
 );
@@ -58,6 +61,7 @@ std::tuple<std::unique_ptr<std::unique_ptr<char[]>[]>, std::size_t> argvOf(
  * @param executable is the executable, environment of which will be converted
  * @return tuple containing a ptr to an array and the size of that array
  */
+[[nodiscard]]
 std::tuple<std::unique_ptr<std::unique_ptr<char[]>[]>, std::size_t> envpOf(
     const Executable& executable
 );

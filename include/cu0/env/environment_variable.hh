@@ -5,13 +5,18 @@
 #include <optional>
 #include <string>
 
-// #ifdef __unix__
-// #if __has_include(<stdlib.h>)
-// #include <stdlib.h>
-// #endif
-// #endif
-
 namespace cu0 {
+
+/*!
+ * @brief The EnvironmentVariableData struct provides a way to represent
+ *     environment variables in a memory
+ */
+struct EnvironmentVariableData {
+  //! key of the associated environment variable
+  std::string key{};
+  //! value of the associated environment variable
+  std::optional<std::string> value{};
+};
 
 /*!
  * @brief The EnvironmentVariable struct provides a way to
@@ -28,8 +33,10 @@ public:
    */
   enum class SetError {
     NO_ERROR = 0, //! no error
-    INVALID, //! key_ is a string of length 0, or contains an '=' character
-    MEMORY, //! insufficient memory to add a new variable to the environment
+    //! data_.key is a string of length 0, or contains an '=' character
+    INVALID = EINVAL,
+    //! insufficient memory to add a new variable to the environment
+    MEMORY = ENOMEM,
   };
 #endif
   /*!
@@ -41,31 +48,42 @@ public:
    * @param key is the environment variable key
    * @return unsynced environment variable
    */
+  [[nodiscard]]
   static constexpr EnvironmentVariable unsynced(std::string key);
+  /*!
+   * @brief creates an instance without syncing with the environment
+   * @param data is the environment variable data, i.e. key and value
+   * @return unsynced environment variable with cached value from the data
+   */
+  [[nodiscard]]
+  static constexpr EnvironmentVariable unsynced(EnvironmentVariableData data);
   /*!
    * @brief creates an instance syncing with the environment
    * @param key is the environment variable key
    * @return synced environment variable
    */
+  [[nodiscard]]
   static EnvironmentVariable synced(std::string key);
   /*!
-   * @brief accesses the key of the associated environment variable
+   * @brief accesses the data of this instance @see data_
+   * @return data as a const reference
+   */
+  [[nodiscard]]
+  constexpr const EnvironmentVariableData& data() const;
+  /*!
+   * @brief accesses the key of an associated environment variable
    * @return key as a const reference
    */
+  [[nodiscard]]
   constexpr const std::string& key() const;
   /*!
-   * @brief sets the key to the specified value
-   * @note also sets the value to the actual environment variable value
-   * @param key is the environment variable key
-   */
-  void key(std::string key);
-  /*!
-   * @brief accesses cached value of the associated environment variable
-   * @note cached value may not represent the associated environment variable if
-   *     it was modified after the construction of this instance and
+   * @brief accesses the cached value of the associated environment variable
+   * @note the cached value may not represent the associated environment
+   *     variable if it was modified after the construction of this instance and
    *     before a call to this function
    * @return cached value as a const reference
    */
+  [[nodiscard]]
   constexpr const std::optional<std::string>& cached() const;
   /*!
    * @brief syncs cached value to the actual value of the
@@ -105,10 +123,8 @@ protected:
    * @note does not access an actual environment variable value
    */
   constexpr EnvironmentVariable() = default;
-  //! key of the environment variable to associate this isntance with
-  std::string key_{};
-  //! cached value of the associted environment variable
-  std::optional<std::string> value_{};
+  //! key-value data of the associated environment variable
+  EnvironmentVariableData data_{};
 };
 
 #ifdef __unix__
@@ -123,7 +139,15 @@ namespace cu0 {
 
 constexpr EnvironmentVariable EnvironmentVariable::unsynced(std::string key) {
   auto ret = EnvironmentVariable{};
-  ret.key_ = std::move(key);
+  ret.data_.key = std::move(key);
+  return ret;
+}
+
+constexpr EnvironmentVariable EnvironmentVariable::unsynced(
+    EnvironmentVariableData data
+) {
+  auto ret = EnvironmentVariable{};
+  ret.data_ = std::move(data);
   return ret;
 }
 
@@ -133,22 +157,22 @@ inline EnvironmentVariable EnvironmentVariable::synced(std::string key) {
   return ret;
 }
 
-constexpr const std::string& EnvironmentVariable::key() const {
-  return this->key_;
+constexpr const EnvironmentVariableData& EnvironmentVariable::data() const {
+  return this->data_;
 }
 
-inline void EnvironmentVariable::key(std::string key) {
-  this->key_ = std::move(key);
+constexpr const std::string& EnvironmentVariable::key() const {
+  return this->data_.key;
 }
 
 constexpr const std::optional<std::string>&
 EnvironmentVariable::cached() const {
-  return this->value_;
+  return this->data_.value;
 }
 
 inline const std::optional<std::string>& EnvironmentVariable::sync() {
-  const auto* raw = std::getenv(this->key_.c_str());
-  return this->value_ =
+  const auto* raw = std::getenv(this->data_.key.c_str());
+  return this->data_.value =
       (raw == NULL ? std::optional<std::string>{} : std::string{raw});
 }
 
@@ -157,11 +181,11 @@ inline EnvironmentVariable::SetError EnvironmentVariable::set(
     std::string value
 ) {
   if (setenv(
-      this->key_.c_str(),
+      this->data_.key.c_str(),
       value.c_str(),
       true //! replace
   ) == 0) { //! the environment variable is set
-    this->value_ = std::move(value);
+    this->data_.value = std::move(value);
     return SetError::NO_ERROR;
   } else { //! the environment variable is not set
     return EnvironmentVariable::convert<SetError>(errno);
@@ -171,8 +195,8 @@ inline EnvironmentVariable::SetError EnvironmentVariable::set(
 
 #ifdef __unix__
 inline EnvironmentVariable::SetError EnvironmentVariable::unset() {
-  if (unsetenv(this->key_.c_str()) == 0) {
-    this->value_ = {};
+  if (unsetenv(this->data_.key.c_str()) == 0) {
+    this->data_.value = {};
     return SetError::NO_ERROR;
   } else {
     return EnvironmentVariable::convert<SetError>(errno);
@@ -185,14 +209,7 @@ template <>
 constexpr EnvironmentVariable::SetError EnvironmentVariable::convert(
     const int& errorNumber
 ) {
-  switch (errorNumber) {
-  case EINVAL:
-    return SetError::INVALID;
-  case ENOMEM:
-    return SetError::MEMORY;
-  default:
-    return SetError::NO_ERROR;
-  }
+  return static_cast<SetError>(errorNumber);
 }
 #endif
 

@@ -26,7 +26,8 @@ int main() {
   //! @note environment variable contains current environment's key-value data
   //! @note environment variable is not synchronized with the actual environment
   //!     i.e. environment variable is a snapshot of the actual environment
-  const auto& environment = cu0::currentEnvironment();
+  const auto& environment = 
+      cu0::CurrentEnvironment::as<std::map<std::string, std::string>>();
   //! iterate through the snapshot of the actual environment
   for (const auto& [key, value] : environment) {
     std::cout << "environment[" << key << "]" << "=" << value << '\n';

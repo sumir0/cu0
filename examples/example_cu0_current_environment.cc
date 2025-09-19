@@ -9,7 +9,8 @@
 //!         no feature-related compile-time warnings will be present
 #if !__has_include(<unistd.h>)
 #warning <unistd.h> is not found => \
-    cu0::currentEnvironment() will not be used in the example
+    template <class T> cu0::CurrentEnvironment::as<T>() \
+    will not be used in the example
 int main() {}
 #else
 
@@ -18,7 +19,8 @@ int main() {
   //! @note environment variable contains current environment's key-value data
   //! @note environment variable is not synchronized with the actual environment
   //!     i.e. environment variable is a snapshot of the actual environment
-  const auto& environment = cu0::currentEnvironment();
+  const auto& environment =
+      cu0::CurrentEnvironment::as<std::map<std::string, std::string>>();
   //! iterate through the snapshot of the actual environment
   for (const auto& [key, value] : environment) {
     std::cout << "environment[" << key << "]" << "=" << value << '\n';

@@ -75,5 +75,8 @@ int main() {
   assert(!environmentVariable.sync().has_value());
 #endif
 
+  unsetenv(uniqueTestKey.c_str());
+  unsetenv(anotherUniqueTestKey.c_str());
+
   return 0;
 }

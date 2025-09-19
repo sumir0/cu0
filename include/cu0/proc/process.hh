@@ -109,6 +109,9 @@ struct Process {
 public:
 #ifdef __unix__
 #if __has_include(<unistd.h>)
+  /*!
+   * @brief enum of possible errors for create() and createPipeless() functions
+   */
   enum struct CreateError {
     NO_ERROR = 0, //! no error
     AGAIN = EAGAIN, //! @see EAGAIN
@@ -122,6 +125,9 @@ public:
 #endif
 #ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
+  /*!
+   * @brief enum of possible errors for waitCautious() function
+   */
   enum struct WaitError {
     NO_ERROR = 0, //! no error
     CHILD = ECHILD, //! @see ECHILD
@@ -132,6 +138,9 @@ public:
 #endif
 #ifdef __unix__
 #if __has_include(<unistd.h>)
+  /*!
+   * @brief enum of possible errors for stdinCautious() function
+   */
   enum struct WriteError {
     NO_ERROR = 0, //! no error
     AGAIN = EAGAIN, //! @see EAGAIN
@@ -156,6 +165,10 @@ public:
 #endif
 #ifdef __unix__
 #if __has_include(<unistd.h>)
+  /*!
+   * @brief enum of possible errors for stdoutCautious() and stderrCautious()
+   *     functions
+   */
   enum struct ReadError {
     NO_ERROR = 0, //! no error
     AGAIN = EAGAIN, //! @see EAGAIN
@@ -182,6 +195,9 @@ public:
 #endif
 #ifdef __unix__
 #if __has_include(<signal.h>)
+  /*!
+   * @brief enum of possible errors for signalCautious() function
+   */
   enum struct SignalError {
     NO_ERROR = 0, //! no error
     INVAL = EINVAL, //! @see EINVAL
@@ -200,19 +216,21 @@ public:
    *     @see implementation details of Process::current()
    * @return current process
    */
-  [[nodiscard]] static Process current();
+  [[nodiscard]]
+  static Process current();
 #endif
 #endif
 #ifdef __unix__
 #if __has_include(<unistd.h>)
   /*!
-   * @brief creates a process using the specified executable
+   * @brief creates a process using a specified executable
    * @param executable is the excutable to be run by the process
    * @return
    *     if there were no errors -> created process
    *     if there was an error -> error code
    */
-  [[nodiscard]] static std::variant<Process, CreateError> create(
+  [[nodiscard]]
+  static std::variant<Process, CreateError> create(
       const Executable& executable
   );
 #endif
@@ -220,13 +238,14 @@ public:
 #ifdef __unix__
 #if __has_include(<unistd.h>)
   /*!
-   * @brief creates a process using the specified executable without pipes
+   * @brief creates a process using a specified executable without pipes
    * @param executable is the excutable to be run by the process
    * @return
    *     if there were no errors -> created process
    *     if there was an error -> error code
    */
-  [[nodiscard]] static std::variant<Process, CreateError> createPipeless(
+  [[nodiscard]]
+  static std::variant<Process, CreateError> createPipeless(
       const Executable& executable
   );
 #endif
@@ -238,20 +257,21 @@ public:
   constexpr Process(const Process& other) = delete;
   constexpr Process& operator =(const Process& other) = delete;
   /*!
-   * @brief moves the specified process resources to this process
-   * @param other is the process to be moved
+   * @brief moves process resources to this process
+   * @param other is the process for which resources need to be moved
    */
   constexpr Process(Process&& other);
   /*!
-   * @brief moves the specified process resources to this process
-   * @param other is the process to be moved
-   * @return this process as mutable reference
+   * @brief moves process resources to this process
+   * @param other is the process for which resources need to be moved
+   * @return this process as a mutable reference
    */
   constexpr Process& operator =(Process&& other);
   /*!
    * @brief accesses process identifier value
    * @return process identifier as a const reference
    */
+  [[nodiscard]]
   constexpr const unsigned& pid() const;
   /*!
    * @brief accesses stdin pipe file descriptor
@@ -259,6 +279,7 @@ public:
    *     if stdin pipe file descriptor is valid -> its value
    *     else -> empty optional
    */
+  [[nodiscard]]
   constexpr std::optional<int> stdinPipe() const;
   /*!
    * @brief accesses stdin pipe file descriptor
@@ -266,6 +287,7 @@ public:
    *     if stdin pipe file descriptor is valid -> its value
    *     else -> empty optional
    */
+  [[nodiscard]]
   constexpr std::optional<int> stdoutPipe() const;
   /*!
    * @brief accesses stdin pipe file descriptor
@@ -273,6 +295,7 @@ public:
    *     if stdin pipe file descriptor is valid -> its value
    *     else -> empty optional
    */
+  [[nodiscard]]
   constexpr std::optional<int> stderrPipe() const;
 #ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
@@ -290,6 +313,7 @@ public:
    * @note error code equal to 0 indicates no error
    * @return error code @see WaitError
    */
+  [[nodiscard]]
   WaitError waitCautious();
 #endif
 #endif
@@ -299,8 +323,9 @@ public:
    * @brief accesses exit status code
    * @note exit status code will be empty until the process has been waited
    *     @see Process::wait()
-   * @return const reference to exit status code
+   * @return exit status code as a const reference
    */
+  [[nodiscard]]
   constexpr const std::optional<int>& exitCode() const;
 #endif
 #endif
@@ -310,8 +335,9 @@ public:
    * @brief accesses termination signal code
    * @note termination signal code will be empty until
    *     the process has been waited @see Process::wait()
-   * @return const reference to termination signal code
+   * @return termination signal code as a const reference
    */
+  [[nodiscard]]
   constexpr const std::optional<int>& terminationCode() const;
 #endif
 #endif
@@ -321,8 +347,9 @@ public:
    * @brief accesses stop signal code
    * @note stop signal code will be empty until
    *     the process has been waited @see Process::wait()
-   * @return const reference to stop signal code
+   * @return stop signal code as a const reference
    */
+  [[nodiscard]]
   constexpr const std::optional<int>& stopCode() const;
 #endif
 #endif
@@ -342,6 +369,7 @@ public:
    * @param input is the input value
    * @return result of Process::writeInto() @see Process::writeInto()
    */
+  [[nodiscard]]
   std::tuple<WriteError, std::size_t> stdinCautious(
       const std::string& input
   ) const;
@@ -353,6 +381,7 @@ public:
    * @brief stdout returns the value of the stdout
    * @return string containing stdout value
    */
+  [[nodiscard]]
   std::string stdout() const;
 #endif
 #endif
@@ -362,6 +391,7 @@ public:
    * @brief stdout returns the value of the stdout
    * @return result of Process::readFrom() @see Process::readFrom()
    */
+  [[nodiscard]]
   std::tuple<std::string, ReadError> stdoutCautious() const;
 #endif
 #endif
@@ -371,6 +401,7 @@ public:
    * @brief stderr returns the value of the stderr
    * @return string containing stderr value
    */
+  [[nodiscard]]
   std::string stderr() const;
 #endif
 #endif
@@ -380,13 +411,14 @@ public:
    * @brief stderr returns the value of the stderr
    * @return result of Process::readFrom() @see Process::readFrom()
    */
+  [[nodiscard]]
   std::tuple<std::string, ReadError> stderrCautious() const;
 #endif
 #endif
 #ifdef __unix__
 #if __has_include(<signal.h>)
   /*!
-   * @brief signal sends the specified code as a signal to the process
+   * @brief signal sends a specified code as a signal to this process
    * @param code is the signal to be sent
    */
   void signal(const int& code) const;
@@ -395,12 +427,13 @@ public:
 #ifdef __unix__
 #if __has_include(<signal.h>)
   /*!
-   * @brief signal sends the specified code as a signal to the process
+   * @brief signal sends a specified code as a signal to this process
    * @param code is the signal to be sent
    * @return
    *     if there were no errors -> SignalError::NO_ERROR
    *     if there was an error -> error code (not SignalError::NO_ERROR)
    */
+  [[nodiscard]]
   SignalError signalCautious(const int& code) const;
 #endif
 #endif
@@ -453,7 +486,25 @@ protected:
    *     if Return == std::string -> read value as std::string
    */
   template <std::size_t BUFFER_SIZE, class Return>
+  [[nodiscard]]
   static Return readFrom(const int& pipe);
+#endif
+#endif
+#ifdef __unix__
+#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
+  /*!
+   * @brief loop to wait for process exit
+   * @tparam Return is the type to be returned by this function
+   * @return
+   *     if Return == WaitError ->
+   *         if there were no errors ->
+   *             WaitError::NO_ERROR
+   *         if there was an error ->
+   *             the first encountered error is returned as an error code
+   *     if Return == void -> no errors are returned and handled
+   */
+  template <class Return>
+  Return waitExitLoop();
 #endif
 #endif
   /*!
@@ -465,18 +516,6 @@ protected:
    * @param other is the process to swap this process with
    */
   constexpr void swap(Process&& other);
-#ifdef __unix__
-#if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
-  /*!
-   * @brief loop to wait for process exit
-   * @tparam Return is the return type
-   *     if Return == void -> no errors are returned and handled
-   *     else -> the first encountered error is returned
-   */
-  template <class Return>
-  Return waitExitLoop();
-#endif
-#endif
   //! process identifier
   unsigned pid_ = 0;
   //! stdin file descriptor
