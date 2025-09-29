@@ -107,6 +107,7 @@ public:
   SetError unset();
 #endif
 protected:
+#ifdef __unix__
   /*!
    * @tparam ConvertTo is a struct conversion to which is needed
    * @note ConvertTo may be one of { SetError, }
@@ -114,7 +115,6 @@ protected:
    * @param errorNumber is the error number (error code)
    * @return converted value
    */
-#ifdef __unix__
   template <class ConvertTo>
   static constexpr ConvertTo convert(const int& errorNumber);
 #endif

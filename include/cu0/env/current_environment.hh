@@ -18,10 +18,20 @@ extern char** environ;
 
 namespace cu0 {
 
+/*!
+ * @brief The CurrentEnvironment struct provides a way to access the current
+ *     environment
+ * @note
+ *     no instances of this struct should be created
+ *     for a way to access the current environment @see CurrentEnvironment::as()
+ */
 struct CurrentEnvironment {
+  //! no instances of this struct can be created
+  constexpr CurrentEnvironment() = delete;
   /*!
    * @brief accesses current environment and returns it as a specified type
-   * @note this function is marked deleted to allow only specializations usage
+   * @note this function is marked deleted to allow only usage of
+   *     specializations
    * @return current environment as Return type
    */
   template <class Return>
