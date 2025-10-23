@@ -4,6 +4,9 @@
 #include <cstdlib>
 #include <optional>
 #include <string>
+#include <variant>
+
+#include <cu0/platform/not_an_x.hh>
 
 namespace cu0 {
 
@@ -27,12 +30,11 @@ struct EnvironmentVariableData {
  */
 struct EnvironmentVariable {
 public:
-#ifdef __unix__
+#ifndef not_an_x
   /*!
    * @brief enum of possible errors during value setting
    */
   enum class SetError {
-    NO_ERROR = 0, //! no error
     //! data_.key is a string of length 0, or contains an '=' character
     INVALID = EINVAL,
     //! insufficient memory to add a new variable to the environment
@@ -91,23 +93,27 @@ public:
    * @return new cached value as a const reference
    */
   const std::optional<std::string>& sync();
-#ifdef __unix__
+#ifndef not_an_x
   /*!
    * @brief sets the value of the associated environment variable
    * @param value is the value to be set
-   * @return error code @see SetError
+   * @return
+   *     if no error was reported => std::monostate
+   *     else => error code @see SetError
    */
-  SetError set(std::string value);
+  std::variant<std::monostate, SetError> set(std::string value);
 #endif
-#ifdef __unix__
+#ifndef not_an_x
   /*!
    * @brief unsets the value of the associated environment variable
-   * @return error code @see SetError
+   * @return
+   *     if no error was reported => std::monostate
+   *     else => error code @see SetError
    */
-  SetError unset();
+  std::variant<std::monostate, SetError> unset();
 #endif
 protected:
-#ifdef __unix__
+#ifndef not_an_x
   /*!
    * @tparam ConvertTo is a struct conversion to which is needed
    * @note ConvertTo may be one of { SetError, }
@@ -127,7 +133,7 @@ protected:
   EnvironmentVariableData data_{};
 };
 
-#ifdef __unix__
+#ifndef not_an_x
 template <>
 constexpr EnvironmentVariable::SetError
 EnvironmentVariable::convert(const int& errorNumber);
@@ -176,8 +182,9 @@ inline const std::optional<std::string>& EnvironmentVariable::sync() {
       (raw == NULL ? std::optional<std::string>{} : std::string{raw});
 }
 
-#ifdef __unix__
-inline EnvironmentVariable::SetError EnvironmentVariable::set(
+#ifndef not_an_x
+inline std::variant<std::monostate, EnvironmentVariable::SetError>
+EnvironmentVariable::set(
     std::string value
 ) {
   if (setenv(
@@ -186,25 +193,26 @@ inline EnvironmentVariable::SetError EnvironmentVariable::set(
       true //! replace
   ) == 0) { //! the environment variable is set
     this->data_.value = std::move(value);
-    return SetError::NO_ERROR;
+    return std::monostate{};
   } else { //! the environment variable is not set
     return EnvironmentVariable::convert<SetError>(errno);
   }
 }
 #endif
 
-#ifdef __unix__
-inline EnvironmentVariable::SetError EnvironmentVariable::unset() {
+#ifndef not_an_x
+inline std::variant<std::monostate, EnvironmentVariable::SetError>
+EnvironmentVariable::unset() {
   if (unsetenv(this->data_.key.c_str()) == 0) {
     this->data_.value = {};
-    return SetError::NO_ERROR;
+    return std::monostate{};
   } else {
     return EnvironmentVariable::convert<SetError>(errno);
   }
 }
 #endif
 
-#ifdef __unix__
+#ifndef not_an_x
 template <>
 constexpr EnvironmentVariable::SetError EnvironmentVariable::convert(
     const int& errorNumber

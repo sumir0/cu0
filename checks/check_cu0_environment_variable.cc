@@ -57,19 +57,17 @@ int main() {
   assert(environmentVariable.sync().has_value());
   assert(environmentVariable.sync().value() == TEST_VALUE);
 
-#ifdef __unix__
-  assert(environmentVariable.set(TEST_VALUE_NEXT) ==
-      cu0::EnvironmentVariable::SetError::NO_ERROR
-  );
+#ifndef not_an_x
+  const auto setVariant = environmentVariable.set(TEST_VALUE_NEXT);
+  assert(std::holds_alternative<std::monostate>(setVariant));
   assert(environmentVariable.key() == uniqueTestKey);
   assert(environmentVariable.cached().has_value());
   assert(environmentVariable.cached().value() == TEST_VALUE_NEXT);
   assert(environmentVariable.sync().has_value());
   assert(environmentVariable.sync().value() == TEST_VALUE_NEXT);
 
-  assert(environmentVariable.unset() ==
-      cu0::EnvironmentVariable::SetError::NO_ERROR
-  );
+  const auto unsetVariant = environmentVariable.unset();
+  assert(std::holds_alternative<std::monostate>(unsetVariant));
   assert(environmentVariable.key() == uniqueTestKey);
   assert(!environmentVariable.cached().has_value());
   assert(!environmentVariable.sync().has_value());

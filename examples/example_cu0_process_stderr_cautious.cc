@@ -3,18 +3,13 @@
 
 //! @note supported features may vary on different platforms
 //! @note
-//!     if some feature is not supported ->
+//!     if some feature is not supported =>
 //!         a compile-time warning will be present
-//!     else (if all features are supported) ->
+//!     else (if all features are supported) =>
 //!         no feature-related compile-time warnings will be present
-#ifndef __unix__
-#warning __unix__ is not defined => \
-    cu0::Process::stderrCautious() will not be used in the example
-int main() {}
-#else
 #if !__has_include(<unistd.h>)
 #warning <unistd.h> is not found => \
-    cu0::Process::stderrCautious() will not be used in the example
+cu0::Process::stderrCautious() will not be used in the example
 int main() {}
 #else
 
@@ -29,8 +24,8 @@ int main() {
   //! @note not supported on all platforms yet
   //! @note stderr returns standard error output of the created process
   //!     at the moment of call
-  const auto [errStr, errorCode] = someProcess.stderrCautious();
-  if (errorCode != cu0::Process::ReadError::NO_ERROR) {
+  const auto [result, errStr] = someProcess.stderrCautious();
+  if (!std::holds_alternative<std::monostate>(result)) {
     std::cout << "Error: data was not fully received from the stderr" << '\n';
   }
   if (errStr.empty()) {
@@ -40,5 +35,4 @@ int main() {
   }
 }
 
-#endif
 #endif

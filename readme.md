@@ -12,13 +12,13 @@ make -C <path-to-build-directory> test
 
 ## Features
 
-### cu0::currentEnvironment()
+### cu0::Environment
 
 #### Get a snapshot of the environment
 
-`examples/example_cu0_current_environment.cc`
+`examples/example_cu0_environment.cc`
 ```c++
-#include <cu0/env/current_environment.hh>
+#include <cu0/env/environment.hh>
 #include <iostream>
 
 int main() {
@@ -27,7 +27,7 @@ int main() {
   //! @note environment variable is not synchronized with the actual environment
   //!     i.e. environment variable is a snapshot of the actual environment
   const auto& environment = 
-      cu0::CurrentEnvironment::as<std::map<std::string, std::string>>();
+      cu0::Environment::as<std::map<std::string, std::string>>();
   //! iterate through the snapshot of the actual environment
   for (const auto& [key, value] : environment) {
     std::cout << "environment[" << key << "]" << "=" << value << '\n';
@@ -48,7 +48,7 @@ int main() {
   //! @note an environment variable may not be set
   //! @note read value of the environment variable with the key 'KEY'
   const auto environmentVariable = cu0::EnvironmentVariable::synced("KEY");
-  //! @note if the environment variable is not set ->
+  //! @note if the environment variable is not set =>
   //!     an empty optional is returned
   //! @note cached contains the value of the environment variable at the time of
   //!     last sync with the environment @see EnvironmentVariable::sync
@@ -280,6 +280,72 @@ int main() {
   //! @note not supported on all platforms yet
   //! @note signals the SIGTERM signal to the process
   someProcess.signal(SIGTERM);
+}
+```
+
+### cu0::Strand
+
+Structure allowing control of a thread of execution
+
+#### Create a strand
+
+`examples/example_cu0_strand_create.cc`
+```c++
+#include <cu0/proc/strand.hh>
+#include <iostream>
+
+int main() {
+  const auto variant = cu0::Strand::create([](){ return; });
+  if (!std::holds_alternative<cu0::Strand>(variant)) {
+    std::cerr << "Strand couldn't be created" << '\n';
+  }
+  const auto& strand = std::get<cu0::Strand>(variant);
+}
+```
+
+### Set priority of a strand
+
+`examples/example_cu0_strand_priority.cc`
+```c++
+#include <cu0/proc/strand.hh>
+#include <iostream>
+
+int main() {
+  auto variant = cu0::Strand::create([](){ return; });
+  if (!std::holds_alternative<cu0::Strand>(variant)) {
+    std::cerr << "Error: the strand couldn't be created" << '\n';
+  }
+  auto& strand = std::get<cu0::Strand>(variant);
+  const auto policyToSet = cu0::Strand::Policy::PTHREAD_OTHER;
+  const auto setPolicyResult = strand.policy(policyToSet);
+  if (!std::holds_alternative<std::monostate>(setPolicyResult)) {
+    std::cout << "Error: the policy of the strand couldn't be set " << '\n';
+  }
+  const auto minPriority =
+      sched_get_priority_min(static_cast<int>(policyToSet));
+  const auto setPriorityResult = strand.priority(minPriority);
+  if (!std::holds_alternative<std::monostate>(setPriorityResult)) {
+    std::cout << "Error: the priority of the strand couldn't be set" << '\n';
+  }
+  const auto runResult = strand.run();
+  if (!std::holds_alternative<std::monostate>(runResult)) {
+    std::cout << "Error: the strand couldn't be launched" << '\n';
+  }
+  const auto joinResult = strand.join();
+  if (!std::holds_alternative<std::monostate>(joinResult)) {
+    std::cout << "Error: the strand couldn't be joined" << '\n';
+  }
+  const auto getPriorityResult = strand.priority();
+  if (!std::holds_alternative<
+      typename cu0::Strand::priority_type
+  >(getPriorityResult)) {
+    std::cout << "Error: priority of the strand couldn't be got" << '\n';
+  } else {
+    const auto priority =
+        std::get<typename cu0::Strand::priority_type>(getPriorityResult);
+    std::cout << "The strand with the priority " << priority << " finished" <<
+        '\n';
+  }
 }
 ```
 

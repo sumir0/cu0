@@ -3,13 +3,13 @@
 
 //! @note supported features may vary on different platforms
 //! @note
-//!     if some feature is not supported ->
+//!     if some feature is not supported =>
 //!         a compile-time warning will be present
-//!     else (if all features are supported) ->
+//!     else (if all features are supported) =>
 //!         no feature-related compile-time warnings will be present
-#ifndef __unix__
-#warning __unix__ is not defined => \
-    cu0::EnvironmentVariable::set(std::string) will not be used in the example
+#ifdef not_an_x
+#warning not a *n.x platform was detected (linux, unix, etc.) => \
+cu0::EnvironmentVariable::set(std::string) will not be used in the example
 int main() {}
 #else
 

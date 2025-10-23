@@ -1,4 +1,4 @@
-#include <cu0/env/current_environment.hh>
+#include <cu0/env/environment.hh>
 #include <cassert>
 
 #if __has_include(<unistd.h>)
@@ -15,7 +15,7 @@ int main() {
 #if __has_include(<unistd.h>)
   {
     const auto& environment =
-        cu0::CurrentEnvironment::as<std::map<std::string, std::string>>();
+        cu0::Environment::as<std::map<std::string, std::string>>();
     auto set = std::set<std::string>{};
     for (auto&& [key, value] : environment) {
       set.insert(key + "=" + value);
@@ -27,7 +27,7 @@ int main() {
   }
   {
     const auto& environment =
-        cu0::CurrentEnvironment::as<std::vector<cu0::EnvironmentVariable>>();
+        cu0::Environment::as<std::vector<cu0::EnvironmentVariable>>();
     auto set = std::set<std::string>{};
     for (const auto& variable : environment) {
       set.insert(variable.key() + "=" + variable.cached().value());
@@ -39,6 +39,6 @@ int main() {
   }
 #else
 #warning <unistd.h> is not found => \
-    template <class T> cu0::CurrentEnvironment::as<T>() will not be checked
+template <class T> cu0::Environment::as<T>() will not be checked
 #endif
 }

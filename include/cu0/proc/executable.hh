@@ -27,7 +27,7 @@ namespace util {
  *     the directories specified by the PATH environment variable
  * @param name is the name of an executable
  * @return executable with empty arguments and an empty environment
- * @note if multiple executables are present with the specified name ->
+ * @note if multiple executables are present with the specified name =>
  *     the first found executable is returned
  */
 [[nodiscard]]
@@ -89,7 +89,7 @@ inline Executable findBy(const std::string& name) {
     return {};
   }
   while (true) {
-#ifdef __unix__
+#ifndef not_an_x
     const auto pos = pathsLeft.find(':');
 #else
     const auto pos = pathsLeft.find(';');

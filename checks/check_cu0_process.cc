@@ -8,15 +8,11 @@
 
 int main(int argc, char** argv) {
 
-#ifdef __unix__
 #if __has_include(<unistd.h>)
   const auto thisProcess = cu0::Process::current();
   assert(thisProcess.pid() == static_cast<unsigned>(getpid()));
 #else
 #warning <unistd.h> is not found => cu0::Process::current() will not be checked
-#endif
-#else
-#warning __unix__ is not defined => cu0::Process::current() will not be checked
 #endif
 
   struct ProcessCheck : public cu0::Process {
@@ -25,7 +21,6 @@ int main(int argc, char** argv) {
   const auto someProcess = ProcessCheck{};
   assert(someProcess.pid() == 0);
 
-#ifdef __unix__
 #if __has_include(<unistd.h>)
   const auto executable = cu0::Executable{}; //! empty executable
   auto created = cu0::Process::create(executable);
@@ -86,11 +81,7 @@ int main(int argc, char** argv) {
 #else
 #warning <unistd.h> is not found => cu0::Process::create() will not be checked
 #endif
-#else
-#warning __unix__ is not defined => cu0::Process::create() will not be checked
-#endif
 
-#ifdef __unix__
 #if __has_include(<unistd.h>)
   const auto createdPipeless = cu0::Process::createPipeless(executable);
   assert(std::holds_alternative<cu0::Process>(createdPipeless));
@@ -145,11 +136,7 @@ int main(int argc, char** argv) {
   ));
 #else
 #warning <unistd.h> is not found => \
-    cu0::Process::createPipeless() will not be checked
-#endif
-#else
-#warning __unix__ is not defined => \
-    cu0::Process::createPipeless() will not be checked
+cu0::Process::createPipeless() will not be checked
 #endif
 
   constexpr auto SLEEP_DURATION = 8; //! [s]
@@ -170,7 +157,6 @@ int main(int argc, char** argv) {
     return std::stoi(argv[1]);
   }
 
-#ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   {
     const auto executableWithExitCodeTwo = cu0::Executable{
@@ -206,8 +192,11 @@ int main(int argc, char** argv) {
     processWithExitCodeTwo.wait();
     assert(processWithExitCodeTwo.exitCode().has_value());
     assert(processWithExitCodeTwo.exitCode().value() == 2);
+    const auto variant = processWithExitCodeTwo.waitCautious();
+    assert(std::holds_alternative<cu0::Process::WaitError>(variant));
     assert(
-        processWithExitCodeTwo.waitCautious() == cu0::Process::WaitError::CHILD
+        std::get<cu0::Process::WaitError>(variant) ==
+            cu0::Process::WaitError::CHILD
     );
     assert(processWithExitCodeTwo.exitCode().has_value());
     assert(processWithExitCodeTwo.exitCode().value() == 2);
@@ -224,10 +213,8 @@ int main(int argc, char** argv) {
     auto& processWithExitCodeTwo =
         std::get<cu0::Process>(createdWithExitCodeTwo);
     auto waitThread = std::thread([&processWithExitCodeTwo, &waitFail](){
-      assert(
-          processWithExitCodeTwo.waitCautious() ==
-              cu0::Process::WaitError::NO_ERROR
-      );
+      const auto variant = processWithExitCodeTwo.waitCautious();
+      assert(std::holds_alternative<std::monostate>(variant));
       waitFail = false;
     });
     const auto waitThreadStartTime = std::chrono::high_resolution_clock::now();
@@ -243,13 +230,19 @@ int main(int argc, char** argv) {
       waitThread.join();
     }
     assert(!waitFail);
+    const auto variant = processWithExitCodeTwo.waitCautious();
+    assert(std::holds_alternative<cu0::Process::WaitError>(variant));
     assert(
-        processWithExitCodeTwo.waitCautious() == cu0::Process::WaitError::CHILD
+        std::get<cu0::Process::WaitError>(variant) ==
+            cu0::Process::WaitError::CHILD
     );
     assert(processWithExitCodeTwo.exitCode().has_value());
     assert(processWithExitCodeTwo.exitCode().value() == 2);
+    const auto variantOther = processWithExitCodeTwo.waitCautious();
+    assert(std::holds_alternative<cu0::Process::WaitError>(variantOther));
     assert(
-        processWithExitCodeTwo.waitCautious() == cu0::Process::WaitError::CHILD
+        std::get<cu0::Process::WaitError>(variantOther) ==
+            cu0::Process::WaitError::CHILD
     );
     assert(processWithExitCodeTwo.exitCode().has_value());
     assert(processWithExitCodeTwo.exitCode().value() == 2);
@@ -259,18 +252,11 @@ int main(int argc, char** argv) {
   }
 #else
 #warning <sys/types.h> or <sys/wait.h> is not found => \
-    cu0::Process::wait() will not be checked
+cu0::Process::wait() will not be checked
 #warning <sys/types.h> or <sys/wait.h> is not found => \
-    cu0::Process::waitCautious() will not be checked
-#endif
-#else
-#warning __unix__ is not defined => \
-    cu0::Process::wait() will not be checked
-#warning __unix__ is not defined => \
-    cu0::Process::waitCautious() will not be checked
+cu0::Process::waitCautious() will not be checked
 #endif
 
-#ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   assert(!thisProcess.exitCode().has_value());
 #if __has_include(<unistd.h>)
@@ -314,13 +300,9 @@ int main(int argc, char** argv) {
 #endif
 #else
 #warning <sys/types.h> or <sys/wait.h> is not found => \
-    cu0::Process::exitCode() will not be checked
-#endif
-#else
-#warning __unix__ is not defined => cu0::Process::exitCode() will not be checked
+cu0::Process::exitCode() will not be checked
 #endif
 
-#ifdef __unix__
 #if __has_include(<unistd.h>)
   struct ProcessWriteIntoCheck : public cu0::Process {
     using cu0::Process::writeInto;
@@ -448,23 +430,26 @@ int main(int argc, char** argv) {
       std::get<cu0::Process>(std::move(createdWithExitCode64))
     };
     const auto& pipe = processWriteIntoCheck.stdinPipe();
-    const auto [writeErrorCode, bytesWritten] =
+    const auto [writeResult, bytesWritten] =
         ProcessWriteIntoCheck::writeInto<
             2,
-            std::tuple<typename cu0::Process::WriteError, std::size_t>
+            std::tuple<
+                std::variant<std::monostate, typename cu0::Process::WriteError>,
+                std::size_t
+            >
         >(pipe, "333\r\n");
-    assert(writeErrorCode == cu0::Process::WriteError::NO_ERROR);
+    assert(std::holds_alternative<std::monostate>(writeResult));
     assert(bytesWritten == 5);
     processWriteIntoCheck.wait();
     assert(processWriteIntoCheck.exitCode().value() == 64);
-    const auto [outStr, stdoutErrorCode] =
+    const auto [stdoutResult, outStr] =
         processWriteIntoCheck.stdoutCautious();
+    assert(std::holds_alternative<std::monostate>(stdoutResult));
     assert(outStr == "333");
-    assert(stdoutErrorCode == cu0::Process::ReadError::NO_ERROR);
-    const auto [errStr, stderrErrorCode] =
+    const auto [stderrResult, errStr] =
         processWriteIntoCheck.stderrCautious();
+    assert(std::holds_alternative<std::monostate>(stderrResult));
     assert(errStr == "333333");
-    assert(stderrErrorCode == cu0::Process::ReadError::NO_ERROR);
   }
   {
     const auto executableWithExitCode64 = cu0::Executable{
@@ -478,23 +463,26 @@ int main(int argc, char** argv) {
       std::get<cu0::Process>(std::move(createdWithExitCode64))
     };
     const auto& pipe = processWriteIntoCheck.stdinPipe();
-    const auto [writeErrorCode, bytesWritten] =
+    const auto [writeResult, bytesWritten] =
         ProcessWriteIntoCheck::writeInto<
             3,
-            std::tuple<typename cu0::Process::WriteError, std::size_t>
+            std::tuple<
+                std::variant<std::monostate, typename cu0::Process::WriteError>,
+                std::size_t
+            >
         >(pipe, "333\r\n");
-    assert(writeErrorCode == cu0::Process::WriteError::NO_ERROR);
+    assert(std::holds_alternative<std::monostate>(writeResult));
     assert(bytesWritten == 5);
     processWriteIntoCheck.wait();
     assert(processWriteIntoCheck.exitCode().value() == 64);
-    const auto [outStr, stdoutErrorCode] =
+    const auto [stdoutResult, outStr] =
         processWriteIntoCheck.stdoutCautious();
+    assert(std::holds_alternative<std::monostate>(stdoutResult));
     assert(outStr == "333");
-    assert(stdoutErrorCode == cu0::Process::ReadError::NO_ERROR);
-    const auto [errStr, stderrErrorCode] =
+    const auto [stderrResult, errStr] =
         processWriteIntoCheck.stderrCautious();
+    assert(std::holds_alternative<std::monostate>(stderrResult));
     assert(errStr == "333333");
-    assert(stderrErrorCode == cu0::Process::ReadError::NO_ERROR);
   }
   {
     const auto executableWithExitCode64 = cu0::Executable{
@@ -508,23 +496,26 @@ int main(int argc, char** argv) {
       std::get<cu0::Process>(std::move(createdWithExitCode64))
     };
     const auto& pipe = processWriteIntoCheck.stdinPipe();
-    const auto [writeErrorCode, bytesWritten] =
+    const auto [writeResult, bytesWritten] =
         ProcessWriteIntoCheck::writeInto<
             4,
-            std::tuple<typename cu0::Process::WriteError, std::size_t>
+            std::tuple<
+                std::variant<std::monostate, typename cu0::Process::WriteError>,
+                std::size_t
+            >
         >(pipe, "333\r\n");
-    assert(writeErrorCode == cu0::Process::WriteError::NO_ERROR);
+    assert(std::holds_alternative<std::monostate>(writeResult));
     assert(bytesWritten == 5);
     processWriteIntoCheck.wait();
     assert(processWriteIntoCheck.exitCode().value() == 64);
-    const auto [outStr, stdoutErrorCode] =
+    const auto [stdoutResult, outStr] =
         processWriteIntoCheck.stdoutCautious();
+    assert(std::holds_alternative<std::monostate>(stdoutResult));
     assert(outStr == "333");
-    assert(stdoutErrorCode == cu0::Process::ReadError::NO_ERROR);
-    const auto [errStr, stderrErrorCode] =
+    const auto [stderrResult, errStr] =
         processWriteIntoCheck.stderrCautious();
+    assert(std::holds_alternative<std::monostate>(stderrResult));
     assert(errStr == "333333");
-    assert(stderrErrorCode == cu0::Process::ReadError::NO_ERROR);
   }
   {
     const auto executableWithExitCode64 = cu0::Executable{
@@ -538,23 +529,26 @@ int main(int argc, char** argv) {
       std::get<cu0::Process>(std::move(createdWithExitCode64))
     };
     const auto& pipe = processWriteIntoCheck.stdinPipe();
-    const auto [writeErrorCode, bytesWritten] =
+    const auto [writeResult, bytesWritten] =
         ProcessWriteIntoCheck::writeInto<
             1024,
-            std::tuple<typename cu0::Process::WriteError, std::size_t>
+            std::tuple<
+                std::variant<std::monostate, typename cu0::Process::WriteError>,
+                std::size_t
+            >
         >(pipe, "333\r\n");
-    assert(writeErrorCode == cu0::Process::WriteError::NO_ERROR);
+    assert(std::holds_alternative<std::monostate>(writeResult));
     assert(bytesWritten == 5);
     processWriteIntoCheck.wait();
     assert(processWriteIntoCheck.exitCode().value() == 64);
-    const auto [outStr, stdoutErrorCode] =
+    const auto [stdoutResult, outStr] =
         processWriteIntoCheck.stdoutCautious();
+    assert(std::holds_alternative<std::monostate>(stdoutResult));
     assert(outStr == "333");
-    assert(stdoutErrorCode == cu0::Process::ReadError::NO_ERROR);
-    const auto [errStr, stderrErrorCode] =
+    const auto [stderrResult, errStr] =
         processWriteIntoCheck.stderrCautious();
+    assert(std::holds_alternative<std::monostate>(stderrResult));
     assert(errStr == "333333");
-    assert(stderrErrorCode == cu0::Process::ReadError::NO_ERROR);
   }
   {
     const auto executableWithExitCode64 = cu0::Executable{
@@ -568,23 +562,26 @@ int main(int argc, char** argv) {
       std::get<cu0::Process>(std::move(createdWithExitCode64))
     };
     const auto& pipe = processWriteIntoCheck.stdinPipe();
-    const auto [writeErrorCode, bytesWritten] =
+    const auto [writeResult, bytesWritten] =
         ProcessWriteIntoCheck::writeInto<
             8192,
-            std::tuple<typename cu0::Process::WriteError, std::size_t>
+            std::tuple<
+                std::variant<std::monostate, typename cu0::Process::WriteError>,
+                std::size_t
+            >
         >(pipe, "333\r\n");
-    assert(writeErrorCode == cu0::Process::WriteError::NO_ERROR);
+    assert(std::holds_alternative<std::monostate>(writeResult));
     assert(bytesWritten == 5);
     processWriteIntoCheck.wait();
     assert(processWriteIntoCheck.exitCode().value() == 64);
-    const auto [outStr, stdoutErrorCode] =
+    const auto [stdoutResult, outStr] =
         processWriteIntoCheck.stdoutCautious();
+    assert(std::holds_alternative<std::monostate>(stdoutResult));
     assert(outStr == "333");
-    assert(stdoutErrorCode == cu0::Process::ReadError::NO_ERROR);
-    const auto [errStr, stderrErrorCode] =
+    const auto [stderrResult, errStr] =
         processWriteIntoCheck.stderrCautious();
+    assert(std::holds_alternative<std::monostate>(stderrResult));
     assert(errStr == "333333");
-    assert(stderrErrorCode == cu0::Process::ReadError::NO_ERROR);
   }
   {
     const auto executableWithExitCode64 = cu0::Executable{
@@ -596,56 +593,50 @@ int main(int argc, char** argv) {
     assert(std::holds_alternative<cu0::Process>(createdWithExitCode64));
     auto& processWithExitCode64 =
         std::get<cu0::Process>(createdWithExitCode64);
-    const auto [errorCode, bytesWritten] =
+    const auto [result, bytesWritten] =
         processWithExitCode64.stdinCautious("64\r\n");
-    assert(errorCode == cu0::Process::WriteError::NO_ERROR);
+    assert(std::holds_alternative<std::monostate>(result));
     assert(bytesWritten == 4);
     processWithExitCode64.wait();
     assert(processWithExitCode64.exitCode().value() == 64);
-    const auto [outStr, stdoutErrorCode] =
+    const auto [stdoutResult, outStr] =
         processWithExitCode64.stdoutCautious();
+    assert(std::holds_alternative<std::monostate>(stdoutResult));
     assert(outStr == "64");
-    assert(stdoutErrorCode == cu0::Process::ReadError::NO_ERROR);
-    const auto [errStr, stderrErrorCode] =
+    const auto [stderrResult, errStr] =
         processWithExitCode64.stderrCautious();
+    assert(std::holds_alternative<std::monostate>(stderrResult));
     assert(errStr == "6464");
-    assert(stderrErrorCode == cu0::Process::ReadError::NO_ERROR);
   }
 #else
 #warning <unistd.h> is not found => \
-    cu0::Process::stdin() will not be checked
+cu0::Process::stdin() will not be checked
 #warning <unistd.h> is not found => \
-    cu0::Process::stdinCautious() will not be checked
-#endif
-#else
-#warning __unix__ is not defined => cu0::Process::stdin() will not be checked
-#warning __unix__ is not defined => \
-    cu0::Process::stdinCautious() will not be checked
+cu0::Process::stdinCautious() will not be checked
 #endif
 
-#ifdef __unix__
 #if __has_include(<unistd.h>)
   std::cout << thisProcess.pid();
   std::cout.flush();
   assert(thisProcess.stdout().empty());
-  const auto [outStr, stdoutErrorCode] = thisProcess.stdoutCautious();
+  const auto [stdoutResult, outStr] = thisProcess.stdoutCautious();
   assert(outStr.empty());
   std::cerr << thisProcess.pid() << thisProcess.pid();
   std::cerr.flush();
   assert(thisProcess.stderr().empty());
-  const auto [errStr, stderrErrorCode] = thisProcess.stderrCautious();
+  const auto [stderrResult, errStr] = thisProcess.stderrCautious();
   assert(errStr.empty());
 
-  const auto [zeroOutStr, zeroStdoutErrorCode] =
+  const auto [zeroStdoutResult, zeroOutStr] =
       processWithExitCodeZero.stdoutCautious();
+  assert(std::holds_alternative<std::monostate>(zeroStdoutResult));
   assert(zeroOutStr == "0");
-  assert(zeroStdoutErrorCode == cu0::Process::ReadError::NO_ERROR);
   assert(processWithExitCodeZero.stderr() == "00");
   assert(processWithExitCodeOne.stdout() == "1");
-  const auto [oneErrStr, oneStderrErrorCode] =
+  const auto [oneStderrResult, oneErrStr] =
       processWithExitCodeOne.stderrCautious();
+  assert(std::holds_alternative<std::monostate>(oneStderrResult));
   assert(oneErrStr == "11");
-  assert(oneStderrErrorCode == cu0::Process::ReadError::NO_ERROR);
 
   struct ProcessReadFromCheck : public cu0::Process {
     using cu0::Process::readFrom;
@@ -760,12 +751,15 @@ int main(int argc, char** argv) {
     const auto& processReadFromCheck =
         ProcessReadFromCheck{std::move(processWithExitCode255)};
     const auto& pipe = processReadFromCheck.stdoutPipe();
-    const auto [str, errorCode] = ProcessReadFromCheck::readFrom<
+    const auto [variant, str] = ProcessReadFromCheck::readFrom<
         2,
-        std::tuple<std::string, typename cu0::Process::ReadError>
+        std::tuple<
+            std::variant<std::monostate, typename cu0::Process::ReadError>,
+            std::string
+        >
     >(pipe);
+    assert(std::holds_alternative<std::monostate>(variant));
     assert(str == "255");
-    assert(errorCode == cu0::Process::ReadError::NO_ERROR);
   }
   {
     const auto executableWithExitCode255 = cu0::Executable{
@@ -782,12 +776,15 @@ int main(int argc, char** argv) {
     const auto& processReadFromCheck =
         ProcessReadFromCheck{std::move(processWithExitCode255)};;
     const auto& pipe = processReadFromCheck.stdoutPipe();
-    const auto [str, errorCode] = ProcessReadFromCheck::readFrom<
+    const auto [variant, str] = ProcessReadFromCheck::readFrom<
         3,
-        std::tuple<std::string, typename cu0::Process::ReadError>
+        std::tuple<
+            std::variant<std::monostate, typename cu0::Process::ReadError>,
+            std::string
+        >
     >(pipe);
+    assert(std::holds_alternative<std::monostate>(variant));
     assert(str == "255");
-    assert(errorCode == cu0::Process::ReadError::NO_ERROR);
   }
   {
     const auto executableWithExitCode255 = cu0::Executable{
@@ -804,12 +801,15 @@ int main(int argc, char** argv) {
     const auto& processReadFromCheck =
         ProcessReadFromCheck{std::move(processWithExitCode255)};
     const auto& pipe = processReadFromCheck.stdoutPipe();
-    const auto [str, errorCode] = ProcessReadFromCheck::readFrom<
+    const auto [variant, str] = ProcessReadFromCheck::readFrom<
         4,
-        std::tuple<std::string, typename cu0::Process::ReadError>
+        std::tuple<
+            std::variant<std::monostate, typename cu0::Process::ReadError>,
+            std::string
+        >
     >(pipe);
+    assert(std::holds_alternative<std::monostate>(variant));
     assert(str == "255");
-    assert(errorCode == cu0::Process::ReadError::NO_ERROR);
   }
   {
     const auto executableWithExitCode255 = cu0::Executable{
@@ -826,12 +826,15 @@ int main(int argc, char** argv) {
     const auto& processReadFromCheck =
         ProcessReadFromCheck{std::move(processWithExitCode255)};
     const auto& pipe = processReadFromCheck.stdoutPipe();
-    const auto [str, errorCode] = ProcessReadFromCheck::readFrom<
+    const auto [variant, str] = ProcessReadFromCheck::readFrom<
         1024,
-        std::tuple<std::string, typename cu0::Process::ReadError>
+        std::tuple<
+            std::variant<std::monostate, typename cu0::Process::ReadError>,
+            std::string
+        >
     >(pipe);
+    assert(std::holds_alternative<std::monostate>(variant));
     assert(str == "255");
-    assert(errorCode == cu0::Process::ReadError::NO_ERROR);
   }
   {
     const auto executableWithExitCode255 = cu0::Executable{
@@ -848,35 +851,29 @@ int main(int argc, char** argv) {
     const auto& processReadFromCheck =
         ProcessReadFromCheck{std::move(processWithExitCode255)};
     const auto& pipe = processReadFromCheck.stdoutPipe();
-    const auto [str, errorCode] = ProcessReadFromCheck::readFrom<
+    const auto [variant, str] = ProcessReadFromCheck::readFrom<
         8192,
-        std::tuple<std::string, typename cu0::Process::ReadError>
+        std::tuple<
+            std::variant<std::monostate, typename cu0::Process::ReadError>,
+            std::string
+        >
     >(pipe);
+    assert(std::holds_alternative<std::monostate>(variant));
     assert(str == "255");
-    assert(errorCode == cu0::Process::ReadError::NO_ERROR);
   }
 #else
 #warning <unistd.h> is not found => \
-    cu0::Process::stdout() will not be checked
+cu0::Process::stdout() will not be checked
 #warning <unistd.h> is not found => \
-    cu0::Process::stdoutCautious() will not be checked
+cu0::Process::stdoutCautious() will not be checked
 #warning <unistd.h> is not found => \
-    cu0::Process::stderr() will not be checked
+cu0::Process::stderr() will not be checked
 #warning <unistd.h> is not found => \
-    cu0::Process::stderrCautious() will not be checked
-#endif
-#else
-#warning __unix__ is not defined => cu0::Process::stdout() will not be checked
-#warning __unix__ is not defined => \
-    cu0::Process::stdoutCautious() will not be checked
-#warning __unix__ is not defined => cu0::Process::stderr() will not be checked
-#warning __unix__ is not defined => \
-    cu0::Process::stderrCautious() will not be checked
+cu0::Process::stderrCautious() will not be checked
 #endif
 
-#ifdef __unix__
 #if __has_include(<signal.h>) && __has_include(<sys/types.h>) && \
-    __has_include(<sys/wait.h>)
+__has_include(<sys/wait.h>)
   {
     const auto executableWithSleep = cu0::Executable{
       .binary = argv[0],
@@ -934,10 +931,8 @@ int main(int argc, char** argv) {
     auto& processWithSleep =
         std::get<cu0::Process>(createdWithSleep);
     assert(!processWithSleep.exitCode().has_value());
-    assert(
-        processWithSleep.signalCautious(SIGTERM) ==
-            cu0::Process::SignalError::NO_ERROR
-    );
+    const auto variant = processWithSleep.signalCautious(SIGTERM);
+    assert(std::holds_alternative<std::monostate>(variant));
     processWithSleep.wait();
     const auto end = std::chrono::high_resolution_clock::now();
     assert(!processWithSleep.exitCode().has_value());
@@ -960,10 +955,8 @@ int main(int argc, char** argv) {
     auto& processWithSleep =
         std::get<cu0::Process>(createdWithSleep);
     assert(!processWithSleep.exitCode().has_value());
-    assert(
-        processWithSleep.signalCautious(SIGKILL) ==
-            cu0::Process::SignalError::NO_ERROR
-    );
+    const auto variant = processWithSleep.signalCautious(SIGKILL);
+    assert(std::holds_alternative<std::monostate>(variant));
     processWithSleep.wait();
     const auto end = std::chrono::high_resolution_clock::now();
     assert(!processWithSleep.exitCode().has_value());
@@ -977,13 +970,8 @@ int main(int argc, char** argv) {
   }
 #else
 #warning <signal.h> or <sys/types.h> or <sys/wait.h> is not found => \
-    cu0::Process::signal() and cu0::Process::signalCautious() and \
-    cu0::Process::terminationCode() will not be checked
-#endif
-#else
-#warning __unix__ is not defined => \
-    cu0::Process::signal() and cu0::Process::signalCautious() and \
-    cu0::Process::terminationCode() will not be checked
+cu0::Process::signal() and cu0::Process::signalCautious() and \
+cu0::Process::terminationCode() will not be checked
 #endif
 
   {
@@ -992,24 +980,23 @@ int main(int argc, char** argv) {
       int stdinPipe;
       int stdoutPipe;
       int stderrPipe;
-#ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
       std::optional<int> exitCode;
       std::optional<int> terminationCode;
       std::optional<int> stopCode;
-#endif
+#else
+#warning <sys/types.h> or <sys/wait.h> was not found => \
+cu0::Process::stopCode() will not be checked
 #endif
     } processDataMembers{
       .pid = 512,
       .stdinPipe = 511,
       .stdoutPipe = 510,
       .stderrPipe = 509,
-#ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
       .exitCode = 508,
       .terminationCode = 507,
       .stopCode = 506,
-#endif
 #endif
     };
     struct ProcessDataMembersSetter : public cu0::Process {
@@ -1018,12 +1005,10 @@ int main(int argc, char** argv) {
         this->stdinPipe_ = std::move(data.stdinPipe);
         this->stdoutPipe_ = std::move(data.stdoutPipe);
         this->stderrPipe_ = std::move(data.stderrPipe);
-#ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
         this->exitCode_ = std::move(data.exitCode);
         this->terminationCode_ = std::move(data.terminationCode);
         this->stopCode_ = std::move(data.stopCode);
-#endif
 #endif
       }
     };
@@ -1038,14 +1023,12 @@ int main(int argc, char** argv) {
     assert(movedWithCtor.stdinPipe() == processDataMembers.stdinPipe);
     assert(movedWithCtor.stdoutPipe() == processDataMembers.stdoutPipe);
     assert(movedWithCtor.stderrPipe() == processDataMembers.stderrPipe);
-#ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
     assert(movedWithCtor.exitCode() == processDataMembers.exitCode);
     assert(
         movedWithCtor.terminationCode() == processDataMembers.terminationCode
     );
     assert(movedWithCtor.stopCode() == processDataMembers.stopCode);
-#endif
 #endif
     const auto movedWithOperator = cu0::Process(std::move(
         otherProcessWithCustomData
@@ -1060,7 +1043,6 @@ int main(int argc, char** argv) {
     assert(
         movedWithOperator.stderrPipe() == processDataMembers.stderrPipe
     );
-#ifdef __unix__
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
     assert(movedWithOperator.exitCode() == processDataMembers.exitCode);
     assert(
@@ -1068,7 +1050,6 @@ int main(int argc, char** argv) {
             processDataMembers.terminationCode
     );
     assert(movedWithOperator.stopCode() == processDataMembers.stopCode);
-#endif
 #endif
   }
 

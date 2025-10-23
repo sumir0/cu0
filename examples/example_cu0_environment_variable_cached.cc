@@ -5,7 +5,7 @@ int main() {
   //! @note an environment variable may not be set
   //! @note read value of the environment variable with the key 'KEY'
   const auto environmentVariable = cu0::EnvironmentVariable::synced("KEY");
-  //! @note if the environment variable is not set ->
+  //! @note if the environment variable is not set =>
   //!     an empty optional is returned
   //! @note cached contains the value of the environment variable at the time of
   //!     last sync with the environment @see EnvironmentVariable::sync
