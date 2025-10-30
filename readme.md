@@ -335,17 +335,6 @@ int main() {
   if (!std::holds_alternative<std::monostate>(joinResult)) {
     std::cout << "Error: the strand couldn't be joined" << '\n';
   }
-  const auto getPriorityResult = strand.priority();
-  if (!std::holds_alternative<
-      typename cu0::Strand::priority_type
-  >(getPriorityResult)) {
-    std::cout << "Error: priority of the strand couldn't be got" << '\n';
-  } else {
-    const auto priority =
-        std::get<typename cu0::Strand::priority_type>(getPriorityResult);
-    std::cout << "The strand with the priority " << priority << " finished" <<
-        '\n';
-  }
 }
 ```
 

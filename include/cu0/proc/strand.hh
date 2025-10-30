@@ -126,6 +126,8 @@ public:
 #if __has_include(<pthread.h>)
   /*!
    * @brief gets a priority with which this strand will be launched
+   * @note don't call this function after call to Strand::run() unless
+   *     the consequnces of that calls are well understood
    * @return
    *     if no error was reported => priority value
    *     else => error code
@@ -136,6 +138,8 @@ public:
 #if __has_include(<pthread.h>)
   /*!
    * @brief sets a priority with which this strand will be launched
+   * @note don't call this function after call to Strand::run() unless
+   *     the consequnces of that calls are well understood
    * @param value is the priority to be set @note policy-specific
    *     use sched_get_priority_min(static_cast<int>(Policy)) and
    *     sched_get_priority_max(static_cast<int>(Policy)) to get minimal and
@@ -151,6 +155,8 @@ public:
 #if __has_include(<pthread.h>)
   /*!
    * @brief gets a policy type with which this strand will be launched
+   * @note don't call this function after call to Strand::run() unless
+   *     the consequnces of that calls are well understood
    * @return
    *     if no error was reported => policy type
    *     else => error code
@@ -161,6 +167,8 @@ public:
 #if __has_include(<pthread.h>)
   /*!
    * @brief sets a policy type with which this strand will be launched
+   * @note don't call this function after call to Strand::run() unless
+   *     the consequnces of that calls are well understood
    * @param value is the policy type to be set
    * @return
    *     if no error was reported => std::monostate
