@@ -297,15 +297,15 @@ Structure allowing control of a thread of execution
 int main() {
   const auto variant = cu0::Strand::create([](){ return; });
   if (!std::holds_alternative<cu0::Strand>(variant)) {
-    std::cerr << "Strand couldn't be created" << '\n';
+    std::cerr << "Error: the strand couldn't be created" << '\n';
   }
   const auto& strand = std::get<cu0::Strand>(variant);
 }
 ```
 
-### Set priority of a strand
+### Set scheduling parameters of a strand
 
-`examples/example_cu0_strand_priority.cc`
+`examples/example_cu0_strand_scheduling.cc`
 ```c++
 #include <cu0/proc/strand.hh>
 #include <iostream>
@@ -314,22 +314,57 @@ int main() {
   auto variant = cu0::Strand::create([](){ return; });
   if (!std::holds_alternative<cu0::Strand>(variant)) {
     std::cerr << "Error: the strand couldn't be created" << '\n';
+    return 1;
   }
   auto& strand = std::get<cu0::Strand>(variant);
   const auto policyToSet = cu0::Strand::Policy::PTHREAD_OTHER;
-  const auto setPolicyResult = strand.policy(policyToSet);
-  if (!std::holds_alternative<std::monostate>(setPolicyResult)) {
-    std::cout << "Error: the policy of the strand couldn't be set " << '\n';
-  }
   const auto minPriority =
       sched_get_priority_min(static_cast<int>(policyToSet));
-  const auto setPriorityResult = strand.priority(minPriority);
-  if (!std::holds_alternative<std::monostate>(setPriorityResult)) {
-    std::cout << "Error: the priority of the strand couldn't be set" << '\n';
+  const auto setSchedulingResult =
+      strand.scheduling<cu0::Strand::Stage::NOT_LAUNCHED>({
+        .policy = policyToSet,
+        .priority = minPriority,
+      });
+  if (!std::holds_alternative<std::monostate>(setSchedulingResult)) {
+    std::cout << "Error: the scheduling of the strand couldn't be modified" <<
+        '\n';
+    return 2;
   }
   const auto runResult = strand.run();
   if (!std::holds_alternative<std::monostate>(runResult)) {
     std::cout << "Error: the strand couldn't be launched" << '\n';
+    return 3;
+  }
+  const auto getSchedulingResult =
+      strand.scheduling<cu0::Strand::Stage::LAUNCHED>();
+  if (!std::holds_alternative<typename cu0::Strand::Scheduling>(
+      getSchedulingResult
+  )) {
+    std::cout << "Error: the scheduling of the strand couldn't be retrieved" <<
+        '\n';
+  } else {
+    const auto& scheduling =
+        std::get<typename cu0::Strand::Scheduling>(getSchedulingResult);
+    std::cout << "Info: the strand has scheduling == {" << '\n';
+    std::string policyString;
+    switch (static_cast<int>(scheduling.policy)) {
+    case SCHED_OTHER:
+      policyString = "SCHED_OTHER";
+      break;
+    case SCHED_FIFO:
+      policyString = "SCHED_FIFO";
+      break;
+    case SCHED_RR:
+      policyString = "SCHED_RR";
+      break;
+    default:
+      policyString = "?";
+      break;
+    }
+    std::cout << "  .policy = " << policyString << "," <<
+        '\n';
+    std::cout << "  .priority = " << scheduling.priority << "," << '\n';
+    std::cout << "}" << '\n';
   }
   const auto joinResult = strand.join();
   if (!std::holds_alternative<std::monostate>(joinResult)) {

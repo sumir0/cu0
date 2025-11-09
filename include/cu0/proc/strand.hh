@@ -3,7 +3,13 @@
 
 #if !__has_include(<pthread.h>)
 #warning <pthread.h> is not found => \
+cu0::Strand::Policy will not be supported
+#warning <pthread.h> is not found => \
 cu0::Strand::priority_type will not be supported
+#warning <pthread.h> is not found => \
+cu0::Strand::Scheduling will not be supported
+#warning <pthread.h> is not found => \
+cu0::Strand::Stage will not be supported
 #warning <pthread.h> is not found => \
 cu0::Strand::ResourceError will not be supported
 #warning <pthread.h> is not found => \
@@ -11,11 +17,11 @@ cu0::Strand::GetPriorityError will not be supported
 #warning <pthread.h> is not found => \
 cu0::Strand::SetPriorityError will not be supported
 #warning <pthread.h> is not found => \
-cu0::Strand::Policy will not be supported
-#warning <pthread.h> is not found => \
 cu0::Strand::GetPolicyError will not be supported
 #warning <pthread.h> is not found => \
 cu0::Strand::SetPolicyError will not be supported
+#warning <pthread.h> is not found => \
+cu0::Strand::InitError will not be supported
 #warning <pthread.h> is not found => \
 cu0::Strand::RunError will not be supported
 #warning <pthread.h> is not found => \
@@ -25,9 +31,9 @@ cu0::Strand::priority() will not be supported
 #warning <pthread.h> is not found => \
 cu0::Strand::priority(const priority_type&) will not be supported
 #warning <pthread.h> is not found => \
-cu0::Strand::policy() will not be supported
+cu0::Strand::scheduling() will not be supported
 #warning <pthread.h> is not found => \
-cu0::Strand::policy(const Policy&) will not be supported
+cu0::Strand::scheduling(const Scheduling&) will not be supported
 #endif
 
 #include <functional>
@@ -49,64 +55,90 @@ namespace cu0 {
 struct Strand {
 public:
 #if __has_include(<pthread.h>)
-  //! actual priority data representation
+  //! available policies
+  enum struct Policy {
+    PTHREAD_OTHER = SCHED_OTHER,
+    PTHREAD_FIFO = SCHED_FIFO,
+    PTHREAD_RR = SCHED_RR,
+  };
+#endif
+#if __has_include(<pthread.h>)
+  //! underlying priority type
   using priority_type = std::remove_reference_t<
       decltype(std::declval<sched_param>().sched_priority)
   >;
 #endif
 #if __has_include(<pthread.h>)
-  //! errors related to creation of a strand
+  //! scheduling data representation
+  struct Scheduling {
+    Policy policy = Policy::PTHREAD_OTHER;
+    /*!
+     * @note policy-specific
+     *     when it is modified use
+     *     sched_get_priority_min(static_cast<int>(Policy)) and
+     *     sched_get_priority_max(static_cast<int>(Policy)) to get minimal and
+     *     maximal values for the specified policy
+     */
+    priority_type priority{};
+  };
+#endif
+#if __has_include(<pthread.h>)
+  //! stage of a strand
+  enum struct Stage {
+    NOT_LAUNCHED, //! before Strand::run()
+    LAUNCHED, //! after Strand::run() but before Strand::join()
+  };
+#endif
+#if __has_include(<pthread.h>)
+  //! errors related to resource management of a strand
   enum struct ResourceError {
     PTHREAD_NOMEM = ENOMEM, //! no memory
   };
 #endif
 #if __has_include(<pthread.h>)
-  //! errors related to accesses of a priority value
+  //! errors related to retrieval of a priority value
   enum struct GetPriorityError {
   };
 #endif
 #if __has_include(<pthread.h>)
-  //! errors related to changes of a priority value
+  //! errors related to modification of a priority value
   enum struct SetPriorityError {
-    PTHREAD_INVAL = EINVAL, //! invalid priority was specified
+    PTHREAD_NOTSUP = ENOTSUP, //! unsupported priority or policy was specified
+    PTHREAD_INVAL = EINVAL, //! invalid priority or policy was specified
   };
 #endif
 #if __has_include(<pthread.h>)
-  //! available policies
-  enum struct Policy {
-    PTHREAD_OTHER = SCHED_OTHER,
-    PTHREAD_IDLE = SCHED_IDLE,
-    PTHREAD_BATCH = SCHED_BATCH,
-    PTHREAD_FIFO = SCHED_FIFO,
-    PTHREAD_RR = SCHED_RR,
-    PTHREAD_DEADLINE = SCHED_DEADLINE,
-  };
-#endif
-#if __has_include(<pthread.h>)
-  //! errors related to accesses of a policy value
+  //! errors related to retrieval of a policy value
   enum struct GetPolicyError {
   };
 #endif
 #if __has_include(<pthread.h>)
-  //! errors related to changes of a policy value
+  //! errors related to modification of a policy value
   enum struct SetPolicyError {
+    PTHREAD_NOTSUP = ENOTSUP, //! unsupported policy was specified
     PTHREAD_INVAL = EINVAL, //! invalid policy was specified
+    PTHREAD_PERM = EPERM, //! current privileges are not enough
   };
 #endif
 #if __has_include(<pthread.h>)
-  //! errors related to launches of a strand
+  //! errors related to initializtion of a strand and its parameters
+  enum struct InitError {
+    //! operation unsupported on the platform was requested
+    //! changing scheduling and/or priority will not make effect
+    PTHREAD_NOTSUP = ENOTSUP,
+  };
+#endif
+#if __has_include(<pthread.h>)
+  //! errors related to launching of a strand
   enum struct RunError {
     PTHREAD_AGAIN = EAGAIN, //! insufficient resources or limit
-    PTHREAD_INVAL = EINVAL, //! invalid settings in attributes
-    PTHREAD_PERM = EPERM, //! no permission to set parameters in attributes
+    PTHREAD_PERM = EPERM, //! no permission to apply strand parameters
   };
 #endif
 #if __has_include(<pthread.h>)
-  //! errors related to joins of a strand
+  //! errors related to joining to a strand
   enum struct JoinError {
-    PTHREAD_DEADLK = EDEADLK, //! deadlock detected
-    PTHREAD_INVAL = EINVAL, //! thread is already being waited to join
-    PTHREAD_SRCH = ESRCH, //! thread was not found
+    PTHREAD_DEADLK = EDEADLK, //! deadlock was detected
   };
 #endif
   /*
@@ -118,68 +150,177 @@ public:
    */
   [[nodiscard]] static
 #if __has_include(<pthread.h>)
-      std::variant<Strand, ResourceError>
+      std::variant<Strand, ResourceError, InitError>
 #else
       std::variant<Strand>
 #endif
       create(std::function<void()> task);
 #if __has_include(<pthread.h>)
   /*!
-   * @brief gets a priority with which this strand will be launched
-   * @note don't call this function after call to Strand::run() unless
-   *     the consequnces of that calls are well understood
+   * @brief gets a priority of this strand
+   * @note deleted | actual implementations are provided through specializations
    * @return
    *     if no error was reported => priority value
    *     else => error code
    */
+  template <Stage stage>
   [[nodiscard]]
-  constexpr std::variant<priority_type, GetPriorityError> priority() const;
+  constexpr std::variant<
+      priority_type,
+      GetPriorityError
+  > priority() const = delete;
+  /*!
+   * @brief gets a priority with which this strand will be launched
+   * @return
+   *     if no error was reported => priority value
+   *     else => error code
+   */
+  template <>
+  [[nodiscard]]
+  constexpr std::variant<
+      priority_type,
+      GetPriorityError
+  > priority<Stage::NOT_LAUNCHED>() const;
+  /*!
+   * @brief gets a priority with which this strand is running
+   * @return
+   *     if no error was reported => priority value
+   *     else => error code
+   */
+  template <>
+  [[nodiscard]]
+  constexpr std::variant<
+      priority_type,
+      GetPriorityError
+  > priority<Stage::LAUNCHED>() const;
 #endif
 #if __has_include(<pthread.h>)
+  /*!
+#include <map>
+   * @brief sets a priority of this strand
+   * @note deleted | actual implementations are provided through specializations
+   * @param priority is the priority to be set
+   * @return
+   *     if no error was reported => std::monostate
+   *     else => error code
+   */
+  template <Stage stage>
+  constexpr std::variant<std::monostate, SetPriorityError> priority(
+      const priority_type& priority
+  ) = delete;
   /*!
    * @brief sets a priority with which this strand will be launched
-   * @note don't call this function after call to Strand::run() unless
-   *     the consequnces of that calls are well understood
-   * @param value is the priority to be set @note policy-specific
-   *     use sched_get_priority_min(static_cast<int>(Policy)) and
-   *     sched_get_priority_max(static_cast<int>(Policy)) to get minimal and
-   *     maximal values for the specified policy
+   * @param priority is the priority to be set
    * @return
    *     if no error was reported => std::monostate
    *     else => error code
    */
-  constexpr std::variant<std::monostate, SetPriorityError> priority(
-      const priority_type& value
-  );
+  template <>
+  constexpr std::variant<std::monostate, SetPriorityError> priority<
+      Stage::NOT_LAUNCHED
+  >(const priority_type& priority);
+  /*!
+   * @brief sets a priority with which this strand will continue to run
+   * @param priority is the priority to be set
+   * @return
+   *     if no error was reported => std::monostate
+   *     else => error code
+   */
+  template <>
+  constexpr std::variant<std::monostate, SetPriorityError> priority<
+      Stage::LAUNCHED
+  >(const priority_type& priority);
 #endif
 #if __has_include(<pthread.h>)
   /*!
-   * @brief gets a policy type with which this strand will be launched
-   * @note don't call this function after call to Strand::run() unless
-   *     the consequnces of that calls are well understood
+   * @brief gets scheduling parameters of this strand
+   * @note deleted | actual implementations are provided through specializations
    * @return
-   *     if no error was reported => policy type
+   *     if no error was reported => scheduling parameters
    *     else => error code
    */
+  template <Stage stage>
   [[nodiscard]]
-  constexpr std::variant<Policy, GetPolicyError> policy() const;
+  constexpr std::variant<
+      Scheduling,
+      GetPolicyError,
+      GetPriorityError
+  > scheduling() const = delete;
+  /*!
+   * @brief gets scheduling parameters with which this strand will be launched
+   * @return
+   *     if no error was reported => scheduling parameters
+   *     else => error code
+   */
+  template <>
+  [[nodiscard]]
+  constexpr std::variant<
+      Scheduling,
+      GetPolicyError,
+      GetPriorityError
+  > scheduling<Stage::NOT_LAUNCHED>() const;
+  /*!
+   * @brief gets scheduling parameters with which this strand is running
+   * @note GetPriorityError is not used by this implementation
+   * @return
+   *     if no error was reported => scheduling parameters
+   *     else => error code
+   */
+  template <>
+  [[nodiscard]]
+  constexpr std::variant<
+      Scheduling,
+      GetPolicyError,
+      GetPriorityError
+  > scheduling<Stage::LAUNCHED>() const;
 #endif
 #if __has_include(<pthread.h>)
   /*!
-   * @brief sets a policy type with which this strand will be launched
-   * @note don't call this function after call to Strand::run() unless
-   *     the consequnces of that calls are well understood
-   * @param value is the policy type to be set
+   * @brief sets scheduling parameters of this strand
+   * @note deleted | actual implementations are provided through specializations
+   * @param scheduling is the scheduling parameters to be set
    * @return
    *     if no error was reported => std::monostate
    *     else => error code
    */
-  constexpr std::variant<std::monostate, SetPolicyError> policy(
-      const Policy& value
-  );
+  template <Stage stage>
+  constexpr std::variant<
+      std::monostate,
+      SetPolicyError,
+      SetPriorityError
+  > scheduling(const Scheduling& scheduling) = delete;
+  /*!
+   * @brief sets scheduling parameters with which this strand will be launched
+   * @param scheduling is the scheduling parameters to be set
+   * @return
+   *     if no error was reported => std::monostate
+   *     else => error code
+   */
+  template <>
+  constexpr std::variant<
+      std::monostate,
+      SetPolicyError,
+      SetPriorityError
+  > scheduling<Stage::NOT_LAUNCHED>(const Scheduling& scheduling);
+  /*!
+   * @brief sets scheduling parameters with which this strand will continue to
+   *     run
+   * @note SetPriorityError is not used by this implementation
+   * @param scheduling is the scheduling parameters to be set
+   * @return
+   *     if no error was reported => std::monostate
+   *     else => error code
+   */
+  template <>
+  constexpr std::variant<
+      std::monostate,
+      SetPolicyError,
+      SetPriorityError
+  > scheduling<Stage::LAUNCHED>(const Scheduling& scheduling);
 #endif
   /*!
-   * @brief runs a task specified by this->task_, i.e. launches this strand
+   * @brief runs a task specified by this->task_ in a new thread,
+   *     i.e. launches this strand
    * @return
    *     if no error was reported => std::monostate
    *     else => error code
@@ -224,8 +365,8 @@ protected:
   //! task to be executed after launch
   std::function<void()> task_{};
 #if __has_include(<pthread.h>)
-  //! parameters of a strand launch
-  //! @see Strand::priority(), Strand::policy()
+  //! internal representation of parameters with which a strand is launched
+  //! @see Strand::Scheduling
   pthread_attr_t attr_{};
 #endif
   //! thread
@@ -242,7 +383,7 @@ namespace cu0 {
 
 inline
 #if __has_include(<pthread.h>)
-std::variant<Strand, typename Strand::ResourceError>
+std::variant<Strand, typename Strand::ResourceError, typename Strand::InitError>
 #else
 std::variant<Strand>
 #endif
@@ -252,25 +393,42 @@ Strand::create(
   auto ret = Strand{};
   ret.task_ = std::move(task);
 #if __has_include(<pthread.h>)
-  const auto attrInitStatus = pthread_attr_init(&ret.attr_);
-  if (attrInitStatus != 0) {
-    return static_cast<ResourceError>(attrInitStatus);
+  const auto attrInitResult = pthread_attr_init(&ret.attr_);
+  if (attrInitResult != 0) {
+    return static_cast<ResourceError>(attrInitResult);
   }
-  pthread_attr_setinheritsched(&ret.attr_, PTHREAD_EXPLICIT_SCHED);
+  const auto setInheritSchedResult =
+      pthread_attr_setinheritsched(&ret.attr_, PTHREAD_EXPLICIT_SCHED);
+  if (setInheritSchedResult != 0) {
+    return static_cast<InitError>(setInheritSchedResult);
+  }
 #endif
   return ret;
 }
 
 #if __has_include(<pthread.h>)
+template <>
 constexpr std::variant<
     typename Strand::priority_type,
     typename Strand::GetPriorityError
-> Strand::priority() const {
-  sched_param schedParam;
-  const auto res = pthread_attr_getschedparam(
-      &this->attr_,
-      &schedParam
-  );
+> Strand::priority<Strand::Stage::NOT_LAUNCHED>() const {
+  auto schedParam = sched_param{};
+  const auto res = pthread_attr_getschedparam(&this->attr_, &schedParam);
+  if (res != 0) {
+    return static_cast<GetPriorityError>(res);
+  }
+  return schedParam.sched_priority;
+}
+
+template <>
+constexpr std::variant<
+    typename Strand::priority_type,
+    typename Strand::GetPriorityError
+> Strand::priority<Strand::Stage::LAUNCHED>() const {
+  auto schedParam = sched_param{};
+  auto nativePolicy = int{};
+  const auto res =
+      pthread_getschedparam(this->thread_, &nativePolicy, &schedParam);
   if (res != 0) {
     return static_cast<GetPriorityError>(res);
   }
@@ -279,9 +437,12 @@ constexpr std::variant<
 #endif
 
 #if __has_include(<pthread.h>)
-constexpr std::variant<std::monostate, typename Strand::SetPriorityError>
-Strand::priority(const priority_type& value) {
-  const auto schedParam = sched_param{ .sched_priority = value, };
+template <>
+constexpr std::variant<
+    std::monostate,
+    typename Strand::SetPriorityError
+> Strand::priority<Strand::Stage::NOT_LAUNCHED>(const priority_type& priority) {
+  const auto schedParam = sched_param{ .sched_priority = priority, };
   const auto res = pthread_attr_setschedparam(
       &this->attr_,
       &schedParam
@@ -291,28 +452,103 @@ Strand::priority(const priority_type& value) {
   }
   return std::monostate{};
 }
-#endif
 
-#if __has_include(<pthread.h>)
+template <>
 constexpr std::variant<
-    typename Strand::Policy,
-    typename Strand::GetPolicyError
-> Strand::policy() const {
-  int nativePolicy;
-  const auto res = pthread_attr_getschedpolicy(&this->attr_, &nativePolicy);
+    std::monostate,
+    typename Strand::SetPriorityError
+> Strand::priority<Strand::Stage::LAUNCHED>(const priority_type& priority) {
+  const auto res = pthread_setschedprio(this->thread_, priority);
   if (res != 0) {
-    return static_cast<GetPolicyError>(res);
+    return static_cast<SetPriorityError>(res);
   }
-  return static_cast<Policy>(nativePolicy);
+  return std::monostate{};
 }
 #endif
 
 #if __has_include(<pthread.h>)
-constexpr std::variant<std::monostate, typename Strand::SetPolicyError>
-Strand::policy(const Policy& policy) {
-  const auto res = pthread_attr_setschedpolicy(
+template <>
+constexpr std::variant<
+    typename Strand::Scheduling,
+    typename Strand::GetPolicyError,
+    typename Strand::GetPriorityError
+> Strand::scheduling<Strand::Stage::NOT_LAUNCHED>() const {
+  auto nativePolicy = int{};
+  auto schedParam = sched_param{};
+  const auto policyGetResult =
+      pthread_attr_getschedpolicy(&this->attr_, &nativePolicy);
+  if (policyGetResult != 0) {
+    return static_cast<GetPolicyError>(policyGetResult);
+  }
+  const auto priorityGetResult =
+      pthread_attr_getschedparam(&this->attr_, &schedParam);
+  if (priorityGetResult != 0) {
+    return static_cast<GetPriorityError>(priorityGetResult);
+  }
+  return Scheduling{
+    .policy = static_cast<Policy>(nativePolicy),
+    .priority = schedParam.sched_priority,
+  };
+}
+
+template <>
+constexpr std::variant<
+    typename Strand::Scheduling,
+    typename Strand::GetPolicyError,
+    typename Strand::GetPriorityError
+> Strand::scheduling<Strand::Stage::LAUNCHED>() const {
+  auto nativePolicy = int{};
+  auto schedParam = sched_param{};
+  const auto res =
+      pthread_getschedparam(this->thread_, &nativePolicy, &schedParam);
+  if (res != 0) {
+    return static_cast<GetPolicyError>(res);
+  }
+  return Scheduling{
+    .policy = static_cast<Policy>(nativePolicy),
+    .priority = schedParam.sched_priority,
+  };
+}
+#endif
+
+#if __has_include(<pthread.h>)
+template <>
+constexpr std::variant<
+    std::monostate,
+    typename Strand::SetPolicyError,
+    typename Strand::SetPriorityError
+> Strand::scheduling<Strand::Stage::NOT_LAUNCHED>(
+    const Scheduling& scheduling
+) {
+  const auto schedParam = sched_param{ .sched_priority = scheduling.priority, };
+  const auto policySetResult = pthread_attr_setschedpolicy(
       &this->attr_,
-      static_cast<int>(policy)
+      static_cast<int>(scheduling.policy)
+  );
+  if (policySetResult != 0) {
+    return static_cast<SetPolicyError>(policySetResult);
+  }
+  const auto prioritySetResult = pthread_attr_setschedparam(
+      &this->attr_,
+      &schedParam
+  );
+  if (prioritySetResult != 0) {
+    return static_cast<SetPriorityError>(prioritySetResult);
+  }
+  return std::monostate{};
+}
+
+template <>
+constexpr std::variant<
+    std::monostate,
+    typename Strand::SetPolicyError,
+    typename Strand::SetPriorityError
+> Strand::scheduling<Strand::Stage::LAUNCHED>(const Scheduling& scheduling) {
+  const auto schedParam = sched_param{ .sched_priority = scheduling.priority, };
+  const auto res = pthread_setschedparam(
+      this->thread_,
+      static_cast<int>(scheduling.policy),
+      &schedParam
   );
   if (res != 0) {
     return static_cast<SetPolicyError>(res);
