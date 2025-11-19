@@ -1,5 +1,5 @@
-#ifndef CU0_CU0_HXX_
-#define CU0_CU0_HXX_
+#ifndef CU0_CU0_HXX__
+#define CU0_CU0_HXX__
 
 #include <cu0/env.hxx>
 #include <cu0/platform.hxx>
@@ -8,4 +8,4 @@
 
 namespace cu0 {}
 
-#endif /// CU0_CU0_HXX_
+#endif /// CU0_CU0_HXX__

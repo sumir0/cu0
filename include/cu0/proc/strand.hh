@@ -1,5 +1,5 @@
-#ifndef CU0_STRAND_HH_
-#define CU0_STRAND_HH_
+#ifndef CU0_STRAND_HH__
+#define CU0_STRAND_HH__
 
 #if !__has_include(<pthread.h>)
 #warning <pthread.h> is not found => \
@@ -169,6 +169,7 @@ public:
       priority_type,
       GetPriorityError
   > priority() const = delete;
+#ifndef CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
   /*!
    * @brief gets a priority with which this strand will be launched
    * @return
@@ -194,6 +195,7 @@ public:
       GetPriorityError
   > priority<Stage::LAUNCHED>() const;
 #endif
+#endif
 #if __has_include(<pthread.h>)
   /*!
 #include <map>
@@ -208,6 +210,7 @@ public:
   constexpr std::variant<std::monostate, SetPriorityError> priority(
       const priority_type& priority
   ) = delete;
+#ifndef CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
   /*!
    * @brief sets a priority with which this strand will be launched
    * @param priority is the priority to be set
@@ -231,6 +234,7 @@ public:
       Stage::LAUNCHED
   >(const priority_type& priority);
 #endif
+#endif
 #if __has_include(<pthread.h>)
   /*!
    * @brief gets scheduling parameters of this strand
@@ -246,6 +250,7 @@ public:
       GetPolicyError,
       GetPriorityError
   > scheduling() const = delete;
+#ifndef CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
   /*!
    * @brief gets scheduling parameters with which this strand will be launched
    * @return
@@ -274,6 +279,7 @@ public:
       GetPriorityError
   > scheduling<Stage::LAUNCHED>() const;
 #endif
+#endif
 #if __has_include(<pthread.h>)
   /*!
    * @brief sets scheduling parameters of this strand
@@ -289,6 +295,7 @@ public:
       SetPolicyError,
       SetPriorityError
   > scheduling(const Scheduling& scheduling) = delete;
+#ifndef CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
   /*!
    * @brief sets scheduling parameters with which this strand will be launched
    * @param scheduling is the scheduling parameters to be set
@@ -317,6 +324,7 @@ public:
       SetPolicyError,
       SetPriorityError
   > scheduling<Stage::LAUNCHED>(const Scheduling& scheduling);
+#endif
 #endif
   /*!
    * @brief runs a task specified by this->task_ in a new thread,
@@ -615,4 +623,4 @@ inline void* Strand::task(void* args) {
 
 } /// namespace cu0
 
-#endif /// CU0_STRAND_HH_
+#endif /// CU0_STRAND_HH__

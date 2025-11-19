@@ -4,11 +4,29 @@ cu0 is a header-only library providing common utilities for software engineering
 
 ## Testing
 
+| Compiler | Setting                                                    | Status       |
+| :------- | :--------------------------------------------------------- | :----------: |
+| GCC      | CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT=ON  | Build passed |
+| GCC      | CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT=OFF | Build failed |
+| Clang    | CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT=ON  | Build passed |
+| Clang    | CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT=OFF | Build passed |
+
 ```console
-cmake -S <path-to-local-repository> -B <path-to-build-directory>
-make -C <path-to-build-directory>
-make -C <path-to-build-directory> test
+[CC=<path-to-c-compiler>] [CXX=<path-to-cxx-compiler>] cmake \
+  -S <path-to-local-repository> \
+  -B <path-to-build-directory> \
+  [-D<setting=value> ...]
+cmake --build <path-to-build-directory>
+cmake --build <path-to-build-directory> --target test
 ```
+
+### CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
+
+CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT=OFF to compile specialization declarations in structs. 
+
+By default CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT=ON.
+
+Some compilers are known to have bugs. This setting allows the code which uses the library to be compiled by such compilers (at the time of writing this).
 
 ## Features
 

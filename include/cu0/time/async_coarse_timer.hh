@@ -1,5 +1,5 @@
-#ifndef CU0_ASYNC_COARSE_TIMER_HH_
-#define CU0_ASYNC_COARSE_TIMER_HH_
+#ifndef CU0_ASYNC_COARSE_TIMER_HH__
+#define CU0_ASYNC_COARSE_TIMER_HH__
 
 #include <chrono>
 #include <thread>
@@ -67,4 +67,4 @@ constexpr void AsyncCoarseTimer<Rep, Period>::wait() const {
 
 } /// namespace cu0
 
-#endif /// CU0_ASYNC_COARSE_TIMER_HH_
+#endif /// CU0_ASYNC_COARSE_TIMER_HH__

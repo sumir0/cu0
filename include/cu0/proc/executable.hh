@@ -1,5 +1,5 @@
-#ifndef CU0_EXECUTABLE_HH_
-#define CU0_EXECUTABLE_HH_
+#ifndef CU0_EXECUTABLE_HH__
+#define CU0_EXECUTABLE_HH__
 
 #include <filesystem>
 #include <map>
@@ -170,4 +170,4 @@ envpOf(
 
 } /// namespace cu0
 
-#endif /// CU0_EXECUTABLE_HH_
+#endif /// CU0_EXECUTABLE_HH__

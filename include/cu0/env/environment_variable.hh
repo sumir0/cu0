@@ -1,5 +1,5 @@
-#ifndef CU0_ENVIRONMENT_VARIABLE_HH_
-#define CU0_ENVIRONMENT_VARIABLE_HH_
+#ifndef CU0_ENVIRONMENT_VARIABLE_HH__
+#define CU0_ENVIRONMENT_VARIABLE_HH__
 
 #include <cstdlib>
 #include <optional>
@@ -223,4 +223,4 @@ constexpr EnvironmentVariable::SetError EnvironmentVariable::convert(
 
 } /// namespace cu0
 
-#endif /// CU0_ENVIRONMENT_VARIABLE_HH_
+#endif /// CU0_ENVIRONMENT_VARIABLE_HH__

@@ -48,9 +48,10 @@ public:
   template <class Return>
   [[nodiscard]]
   constexpr static Return as() = delete;
+#ifndef CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
 #if __has_include(<unistd.h>)
   /*!
-   * @note specilization of Environment::as()
+   * @note specialization of Environment::as()
    * @brief copies environment variables into std::map<std::string, std::string>
    * @note the behaviour is undefined if environment changes during function
    *     execution
@@ -62,7 +63,7 @@ public:
 #endif
 #if __has_include(<unistd.h>)
   /*!
-   * @note specilization of Environment::as()
+   * @note specialization of Environment::as()
    * @brief copies environment variables into std::vector<EnvironmentVariable>
    * @note the behaviour is undefined if environment changes during function
    *     execution
@@ -71,6 +72,7 @@ public:
   template <>
   [[nodiscard]]
   std::vector<EnvironmentVariable> as();
+#endif
 #endif
 protected:
 #if __has_include(<unistd.h>)

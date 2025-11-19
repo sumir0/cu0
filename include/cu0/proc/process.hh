@@ -1,5 +1,5 @@
-#ifndef CU0_PROCESS_HH_
-#define CU0_PROCESS_HH_
+#ifndef CU0_PROCESS_HH__
+#define CU0_PROCESS_HH__
 
 #if !__has_include(<unistd.h>)
 #warning <unistd.h> is not found => \
@@ -897,4 +897,4 @@ constexpr void Process::swap(Process&& other) {
 
 } /// namespace cu0
 
-#endif /// CU0_PROCESS_HH_
+#endif /// CU0_PROCESS_HH__

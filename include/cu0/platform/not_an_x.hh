@@ -1,5 +1,5 @@
-#ifndef CU0_NOT_AN_X_HH_
-#define CU0_NOT_AN_X_HH_
+#ifndef CU0_NOT_AN_X_HH__
+#define CU0_NOT_AN_X_HH__
 
 /*!
  * defines not_an_x if this platform was detected as not an x platform
@@ -13,4 +13,4 @@
 #endif
 #endif
 
-#endif /// CU0_NOT_AN_X_HH_
+#endif /// CU0_NOT_AN_X_HH__

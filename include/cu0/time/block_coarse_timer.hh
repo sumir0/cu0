@@ -1,5 +1,5 @@
-#ifndef CU0_BLOCK_COARSE_TIMER_HH_
-#define CU0_BLOCK_COARSE_TIMER_HH_
+#ifndef CU0_BLOCK_COARSE_TIMER_HH__
+#define CU0_BLOCK_COARSE_TIMER_HH__
 
 #include <chrono>
 #include <thread>
@@ -49,4 +49,4 @@ constexpr void BlockCoarseTimer<Rep, Period>::launch() const {
 
 } /// namespace cu0
 
-#endif /// CU0_BLOCK_COARSE_TIMER_HH_
+#endif /// CU0_BLOCK_COARSE_TIMER_HH__
