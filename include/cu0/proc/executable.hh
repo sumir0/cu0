@@ -12,9 +12,18 @@
 
 namespace cu0 {
 
+/*!
+ * @brief The Executable struct represents an executable
+ *     stored in a filesystem
+ *     with arguments (if any)
+ *     inside an environment
+ */
 struct Executable {
+  //! path to a binary
   std::filesystem::path binary{};
+  //! argument vector
   std::vector<std::string> arguments{};
+  //! environment in the form <key, value>
   std::map<std::string, std::string> environment{};
 };
 
@@ -23,7 +32,7 @@ namespace util {
 /*!
  * @brief finds an executable by a name
  * @note searches in order:
- *     the current directory,
+ *     the current directory
  *     the directories specified by the PATH environment variable
  * @param name is the name of an executable
  * @return executable with empty arguments and an empty environment

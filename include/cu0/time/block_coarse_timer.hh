@@ -8,8 +8,8 @@ namespace cu0 {
 
 /*!
  * @brief struct representing blocking coarse timer which can be launched
- * @tparam Rep is the type representing the number of ticks @example float
- * @tparam Period is the type representing the tick period
+ * @tparam Rep is the type representing number of ticks @example float
+ * @tparam Period is the type representing tick period
  *     @example std::milli is the period of one millisecond
  *     @example std::ratio<1, 1> is the period of one second
  */

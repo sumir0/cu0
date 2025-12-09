@@ -38,7 +38,7 @@ public:
   //! no instances of this struct can be created
   constexpr Environment() = delete;
   /*!
-   * @brief accesses the environment of execution and returns it as a
+   * @brief accesses the environment of execution and returns it as the
    *     specified type
    * @note this function is marked deleted to allow only usage of
    *     specializations
@@ -77,7 +77,7 @@ public:
 protected:
 #if __has_include(<unistd.h>)
   /*!
-   * @brief accesses the environment of execution and returns it as a
+   * @brief accesses the environment of execution and returns it as the
    *     specified type
    * @tparam Return is the type that will be returned
    * @param insert is the function to insert key-value data

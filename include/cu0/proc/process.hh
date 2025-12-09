@@ -174,7 +174,7 @@ public:
 #endif
 #if __has_include(<unistd.h>)
   /*!
-   * @brief creates a process using a specified executable
+   * @brief creates a process using the specified executable
    * @param executable is the excutable to be run by the process
    * @return
    *     if no error was reported => created process
@@ -187,7 +187,7 @@ public:
 #endif
 #if __has_include(<unistd.h>)
   /*!
-   * @brief creates a process using a specified executable without pipes
+   * @brief creates a process without pipes using the specified executable
    * @param executable is the excutable to be run by the process
    * @return
    *     if no error was reported => created process
@@ -230,17 +230,17 @@ public:
   [[nodiscard]]
   constexpr std::optional<int> stdinPipe() const;
   /*!
-   * @brief accesses stdin pipe file descriptor
+   * @brief accesses stdout pipe file descriptor
    * @return
-   *     if stdin pipe file descriptor is valid => its value
+   *     if stdout pipe file descriptor is valid => its value
    *     else => empty optional
    */
   [[nodiscard]]
   constexpr std::optional<int> stdoutPipe() const;
   /*!
-   * @brief accesses stdin pipe file descriptor
+   * @brief accesses stderr pipe file descriptor
    * @return
-   *     if stdin pipe file descriptor is valid => its value
+   *     if stderr pipe file descriptor is valid => its value
    *     else => empty optional
    */
   [[nodiscard]]
@@ -255,7 +255,6 @@ public:
   /*!
    * @brief waitCautious waits for the process to exit or to be terminated or
    *     to be stopped
-   * @note error code equal to 0 indicates no error
    * @return
    *     if no error was reported => std::monostate
    *     else => error code
@@ -266,7 +265,7 @@ public:
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   /*!
    * @brief accesses exit status code
-   * @note exit status code will be empty until the process has been waited
+   * @note exit status code will be empty if the process hasn't exited normally
    *     @see Process::wait()
    * @return exit status code as a const reference
    */
@@ -276,8 +275,9 @@ public:
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   /*!
    * @brief accesses termination signal code
-   * @note termination signal code will be empty until
-   *     the process has been waited @see Process::wait()
+   * @note termination signal code will be empty if the process hasn't been
+   *     terminated
+   *     @see Process::wait()
    * @return termination signal code as a const reference
    */
   [[nodiscard]]
@@ -286,8 +286,8 @@ public:
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   /*!
    * @brief accesses stop signal code
-   * @note stop signal code will be empty until
-   *     the process has been waited @see Process::wait()
+   * @note stop signal code will be empty if the process hasn't been stopped
+   *     @see Process::wait()
    * @return stop signal code as a const reference
    */
   [[nodiscard]]
@@ -295,14 +295,14 @@ public:
 #endif
 #if __has_include(<unistd.h>)
   /*!
-   * @brief stdin passes the specified input to the stdin
+   * @brief passes the specified input to the stdin
    * @param input is the input value
    */
   void stdin(const std::string& input) const;
 #endif
 #if __has_include(<unistd.h>)
   /*!
-   * @brief stdin passes the specified input to the stdin
+   * @brief passes the specified input to the stdin
    * @param input is the input value
    * @return result of Process::writeInto() @see Process::writeInto()
    */
@@ -312,7 +312,7 @@ public:
 #endif
 #if __has_include(<unistd.h>)
   /*!
-   * @brief stdout returns the value of the stdout
+   * @brief returns the value of the stdout
    * @return string containing stdout value
    */
   [[nodiscard]]
@@ -320,7 +320,7 @@ public:
 #endif
 #if __has_include(<unistd.h>)
   /*!
-   * @brief stdout returns the value of the stdout
+   * @brief returns the value of the stdout
    * @return result of Process::readFrom() @see Process::readFrom()
    */
   [[nodiscard]]
@@ -329,7 +329,7 @@ public:
 #endif
 #if __has_include(<unistd.h>)
   /*!
-   * @brief stderr returns the value of the stderr
+   * @brief returns the value of the stderr
    * @return string containing stderr value
    */
   [[nodiscard]]
@@ -337,7 +337,7 @@ public:
 #endif
 #if __has_include(<unistd.h>)
   /*!
-   * @brief stderr returns the value of the stderr
+   * @brief returns the value of the stderr
    * @return result of Process::readFrom() @see Process::readFrom()
    */
   [[nodiscard]]
@@ -346,14 +346,14 @@ public:
 #endif
 #if __has_include(<signal.h>)
   /*!
-   * @brief signal sends a specified code as a signal to this process
+   * @brief sends the specified code as a signal to this process
    * @param code is the signal to be sent
    */
   void signal(const int& code) const;
 #endif
 #if __has_include(<signal.h>)
   /*!
-   * @brief signal sends a specified code as a signal to this process
+   * @brief sends the specified code as a signal to this process
    * @param code is the signal to be sent
    * @return
    *     if no error was reported => std::monostate
@@ -367,7 +367,7 @@ public:
 protected:
 #if __has_include(<unistd.h>)
   /*!
-   * @brief writeInto writes the specified input into the specified pipe
+   * @brief writes the specified input into the specified pipe
    * @tparam BUFFER_SIZE is the buffer size for writing into the pipe
    * @tparam Return is the type to be returned by this function
    * @param pipe is the pipe to write into
@@ -397,7 +397,7 @@ protected:
 #endif
 #if __has_include(<unistd.h>)
   /*!
-   * @brief readFrom reads from the specified pipe
+   * @brief reads from the specified pipe
    * @tparam BUFFER_SIZE is the buffer size for reading from the pipe
    * @tparam Return is the type to be returned by this function
    * @param pipe is the pipe to read from
@@ -423,7 +423,7 @@ protected:
 #endif
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   /*!
-   * @brief loop to wait for process exit
+   * @brief loops to wait for process exit
    * @tparam Return is the type to be returned by this function
    * @return
    *     if Return == std::variant<std::monostate, WaitError> =>

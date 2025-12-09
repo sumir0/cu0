@@ -57,9 +57,9 @@ public:
 #if __has_include(<pthread.h>)
   //! available policies
   enum struct Policy {
-    PTHREAD_OTHER = SCHED_OTHER,
-    PTHREAD_FIFO = SCHED_FIFO,
-    PTHREAD_RR = SCHED_RR,
+    PTHREAD_OTHER = SCHED_OTHER, /// @see SCHED_OTHER
+    PTHREAD_FIFO = SCHED_FIFO, /// @see SCHED_FIFO
+    PTHREAD_RR = SCHED_RR, /// @see SCHED_RR
   };
 #endif
 #if __has_include(<pthread.h>)
@@ -198,7 +198,6 @@ public:
 #endif
 #if __has_include(<pthread.h>)
   /*!
-#include <map>
    * @brief sets a priority of this strand
    * @note deleted | actual implementations are provided through specializations
    * @param priority is the priority to be set
@@ -363,7 +362,7 @@ protected:
       Strand() = default;
 #if __has_include(<pthread.h>)
   /*!
-   * @brief runs task specified by reinterpret_cast<Strand const *>(args)->task_
+   * @brief calls reinterpret_cast<Strand const *>(args)->task_ task
    * @note used as a helper to launch a strand
    * @param args is the pointer to the instance of this type
    * @return nullptr
@@ -377,12 +376,13 @@ protected:
   //! @see Strand::Scheduling
   pthread_attr_t attr_{};
 #endif
-  //! thread
+  //! thread implementation
 #if __has_include(<pthread.h>)
-  pthread_t thread_{};
+  pthread_t
 #else
-  std::thread thread_{};
+  std::thread
 #endif
+      thread_{};
 };
 
 } /// namespace cu0

@@ -55,7 +55,7 @@ public:
   /*!
    * @brief creates an instance without syncing with the environment
    * @param data is the environment variable data, i.e. key and value
-   * @return unsynced environment variable with cached value from the data
+   * @return unsynced environment variable with the value cached from the data
    */
   [[nodiscard]]
   static constexpr EnvironmentVariable unsynced(EnvironmentVariableData data);
@@ -115,9 +115,9 @@ public:
 protected:
 #ifndef not_an_x
   /*!
+   * @brief converts an error number (error code) to the ConvertTo type
    * @tparam ConvertTo is a struct conversion to which is needed
    * @note ConvertTo may be one of { SetError, }
-   * @brief converts an error number (error code) to the ConvertTo type
    * @param errorNumber is the error number (error code)
    * @return converted value
    */
