@@ -99,7 +99,8 @@ constexpr static Return cu0::Environment::as() = delete;
 
 accesses the environment of execution and returns it as the specified type
 
-> **_NOTE:_** this function is marked deleted to allow only usage of specializations
+> **_NOTE:_** this function is marked deleted to allow only usage of 
+specializations
 
 _Template parameters_
 
@@ -124,7 +125,8 @@ std::map<std::string, std::string> cu0::Environment::as();
 
 copies environment variables into `std::map<std::string, std::string>`
 
-> **_NOTE:_** the behaviour is undefined if environment changes during function execution
+> **_NOTE:_** the behaviour is undefined if environment changes during function 
+execution
 
 _Returns_
 
@@ -145,7 +147,8 @@ std::vector<EnvironmentVariable> cu0::Environment::as();
 
 copies environment variables into `std::vector<EnvironmentVariable>`
 
-> **_NOTE:_** the behaviour is undefined if environment changes during function execution
+> **_NOTE:_** the behaviour is undefined if environment changes during function 
+execution
 
 _Returns_
 
@@ -178,11 +181,14 @@ _Parameters_
 
 insert is the function to insert key-value data
 
-`Return&` param is the first parameter of the function into which key-value data needs to be inserted
+`Return&` param is the first parameter of the function into which key-value 
+data needs to be inserted
 
-`std::string&&` is the second parameter of the function representing key of the environment variable
+`std::string&&` is the second parameter of the function representing key of 
+the environment variable
 
-`std::string&&` is the third parameter of the function representing value of the environment variable
+`std::string&&` is the third parameter of the function representing value of 
+the environment variable
 
 _Returns_
 
@@ -198,7 +204,8 @@ environment as Return type
 struct cu0::EnvironmentVariableData;
 ```
 
-The EnvironmentVariableData struct provides a way to represent environment variables in a memory
+The EnvironmentVariableData struct provides a way to represent environment 
+variables in a memory
 
 ---
 
@@ -228,7 +235,8 @@ value of the associated environment variable
 struct cu0::EnvironmentVariable;
 ```
 
-The EnvironmentVariable struct provides a way to access environment variable values
+The EnvironmentVariable struct provides a way to access environment variable 
+values
 
 ---
 
@@ -372,7 +380,9 @@ cu0::EnvironmentVariable::cached() const;
 
 accesses the cached value of the associated environment variable
 
-> **_NOTE:_** the cached value may not represent the associated environment variable if it was modified after the construction of this instance and before a call to this function
+> **_NOTE:_** the cached value may not represent the associated environment 
+variable if it was modified after the construction of this instance and before 
+a call to this function
 
 _Returns_
 
@@ -527,7 +537,8 @@ not_an_x is defined if this platform was detected as not an x platform
 struct cu0::Executable;
 ```
 
-The Executable struct represents an executable stored in a filesystem with arguments (if any) inside an environment
+The Executable struct represents an executable stored in a filesystem with 
+arguments (if any) inside an environment
 
 ---
 
@@ -580,7 +591,8 @@ _Returns_
 
 executable with empty arguments and an empty environment
 
-> **_NOTE:_** if multiple executables are present with the specified name => the first found executable is returned
+> **_NOTE:_** if multiple executables are present with the specified name => 
+the first found executable is returned
 
 ---
 
@@ -659,7 +671,8 @@ enum struct cu0::Process::CreateError;
 #endif
 ```
 
-enum of possible errors for `cu0::Process::create()` and `cu0::Process::createPipeless()` functions
+enum of possible errors for `cu0::Process::create()` and 
+`cu0::Process::createPipeless()` functions
 
 ---
 
@@ -837,7 +850,8 @@ enum struct cu0::Process::ReadError;
 #endif
 ```
 
-enum of possible errors for `cu0::Process::stdoutCautious()` and `cu0::Process::stderrCautious()` functions
+enum of possible errors for `cu0::Process::stdoutCautious()` and 
+`cu0::Process::stderrCautious()` functions
 
 ---
 
@@ -988,9 +1002,12 @@ static cu0::Process cu0::Process::current();
 #endif
 ```
 
-constructs an instance using the current process in which this function is called
+constructs an instance using the current process in which this function is 
+called
 
-> **_NOTE:_** for the returned current process cu0::Process::stdin(), cu0::Process::stdout(), cu0::Process::stderr() member functions are not supported yet
+> **_NOTE:_** for the returned current process cu0::Process::stdin(), 
+cu0::Process::stdout(), cu0::Process::stderr() member functions are not 
+supported yet
 
 >> **_SEE:_** implementation details of cu0::Process::current()
 
@@ -1203,7 +1220,8 @@ constexpr const std::optional<int>& cu0::Process::exitCode() const;
 
 accesses exit status code
 
-> **_NOTE:_** exit status code will be empty if the process hasn't exited normally
+> **_NOTE:_** exit status code will be empty if the process hasn't exited 
+normally
 
 >> **_SEE:_** cu0::Process::wait()
 
@@ -1223,7 +1241,8 @@ constexpr const std::optional<int>& cu0::Process::terminationCode() const;
 
 accesses termination signal code
 
-> **_NOTE:_** termination signal code will be empty if the process hasn't been terminated
+> **_NOTE:_** termination signal code will be empty if the process hasn't been 
+terminated
 
 >> **_SEE:_** cu0::Process::wait()
 
@@ -1843,6 +1862,36 @@ current privileges are not enough
 ```c++
 #if __has_include(<pthread.h>)
 public:
+enum struct cu0::Strand::GetDetachedError;
+#endif
+```
+
+errors related to retrieval of a status of the detached state
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+public:
+enum struct cu0::Strand::SetDetachedError;
+#endif
+```
+
+errors related to modification of a status of the detached state
+
+---
+
+```c++
+cu0::Strand::InitError::PTHREAD_INVAL = EINVAL,
+```
+
+this running strand is not detachable
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+public:
 enum struct cu0::Strand::InitError;
 #endif
 ```
@@ -1952,7 +2001,8 @@ constexpr std::variant<
 
 gets a priority of this strand
 
-> **_NOTE:_** deleted | actual implementations are provided through specializations
+> **_NOTE:_** deleted | actual implementations are provided through 
+specializations
 
 _Returns_
 
@@ -2016,13 +2066,14 @@ constexpr std::variant<
     cu0::Strand::SetPriorityError
 > cu0::Strand::priority(
     const cu0::Strand::priority_type& priority
-) const = delete;
+) = delete;
 #endif
 ```
 
 sets a priority of this strand
 
-> **_NOTE:_** deleted | actual implementations are provided through specializations
+> **_NOTE:_** deleted | actual implementations are provided through 
+specializations
 
 _Parameters_
 
@@ -2046,7 +2097,7 @@ constexpr std::variant<
     cu0::Strand::SetPriorityError
 > cu0::Strand::priority<cu0::Strand::Stage::NOT_LAUNCHED>(
     const cu0::Strand::priority_type& priority
-) const;
+);
 #endif
 ```
 
@@ -2074,7 +2125,7 @@ constexpr std::variant<
     cu0::Strand::SetPriorityError
 > cu0::Strand::priority<cu0::Strand::Stage::LAUNCHED>(
     const cu0::Strand::priority_type& priority
-) const;
+);
 #endif
 ```
 
@@ -2107,7 +2158,8 @@ constexpr std::variant<
 
 gets scheduling parameters of this strand
 
-> **_NOTE:_** deleted | actual implementations are provided through specializations
+> **_NOTE:_** deleted | actual implementations are provided through 
+specializations
 
 _Returns_
 
@@ -2176,13 +2228,14 @@ constexpr std::variant<
     cu0::Strand::SetPriorityError
 > cu0::Strand::scheduling(
     const Scheduling& scheduling
-) const = delete;
+) = delete;
 #endif
 ```
 
 sets scheduling parameters of this strand
 
-> **_NOTE:_** deleted | actual implementations are provided through specializations
+> **_NOTE:_** deleted | actual implementations are provided through 
+specializations
 
 _Parameters_
 
@@ -2207,7 +2260,7 @@ constexpr std::variant<
     cu0::Strand::SetPriorityError
 > cu0::Strand::scheduling<cu0::Strand::Stage::NOT_LAUNCHED>(
     const Scheduling& scheduling
-) const;
+);
 #endif
 ```
 
@@ -2236,7 +2289,7 @@ constexpr std::variant<
     cu0::Strand::SetPriorityError
 > cu0::Strand::scheduling<cu0::Strand::Stage::LAUNCHED>(
     const Scheduling& scheduling
-) const;
+);
 #endif
 ```
 
@@ -2247,6 +2300,183 @@ sets scheduling parameters with which this strand will continue to run
 _Parameters_
 
 scheduling is the scheduling parameters to be set
+
+_Returns_
+
+if no error was reported => std::monostate
+
+else => error code
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+public:
+template <cu0::Strand::Stage stage>
+[[nodiscard]]
+constexpr std::variant<
+    bool,
+    cu0::Strand::GetDetachedError
+> cu0::Strand::detached() const = delete;
+#endif
+```
+
+gets a status of the detached state of this strand
+
+> **_NOTE:_** deleted | actual implementations are provided through 
+specializations
+
+_Returns_
+
+if no error was reported => status of the detached state
+
+else => error code
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+public:
+template <>
+[[nodiscard]]
+constexpr std::variant<
+    bool,
+    cu0::Strand::GetDetachedError
+> cu0::Strand::detached<cu0::Strand::Stage::NOT_LAUNCHED>() const;
+#endif
+```
+
+gets a status of the detached state with which this strand will be
+
+_Returns_
+
+if no error was reported => status of the detached state
+
+else => error code
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+public:
+template <>
+[[nodiscard]]
+constexpr std::variant<
+    bool,
+    cu0::Strand::GetDetachedError
+> cu0::Strand::detached<cu0::Strand::Stage::LAUNCHED>() const = delete;
+#endif
+```
+
+gets a status of the detached state with which this strand is running
+
+> **_NOTE:_** deleted | not supported
+
+_Returns_
+
+if no error was reported => status of the detached state
+
+else => error code
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+public:
+template <cu0::Strand::Stage stage>
+[[nodiscard]]
+constexpr std::variant<
+    std::monostate,
+    cu0::Strand::SetDetachedError
+> cu0::Strand::detached(
+    const bool detached
+) = delete;
+#endif
+```
+
+sets a status of the detached state of this strand
+
+> **_NOTE:_** deleted | actual implementations are provided through 
+specializations
+
+_Parameters_
+
+detached is the flag specifying if this strand needs to be detached
+
+_Returns_
+
+if no error was reported => std::monostate
+
+else => error code
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+public:
+template <cu0::Strand::Stage stage>
+[[nodiscard]]
+constexpr std::variant<
+    std::monostate,
+    cu0::Strand::SetDetachedError
+> cu0::Strand::detach() = delete;
+#endif
+```
+
+detaches this strand
+
+> **_NOTE:_** deleted | actual implementations are provided through 
+specializations
+
+_Returns_
+
+if no error was reported => std::monostate
+
+else => error code
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+public:
+template <>
+[[nodiscard]]
+constexpr std::variant<
+    std::monostate,
+    cu0::Strand::SetDetachedError
+> cu0::Strand::detached<cu0::Strand::Stage::NOT_LAUNCHED>(
+    const bool detached
+);
+#endif
+```
+
+sets a status of the detached state with which this strand will be launched
+
+_Parameters_
+
+detached is the flag specifying if this strand needs to be detached
+
+_Returns_
+
+if no error was reported => std::monostate
+
+else => error code
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+public:
+template <>
+[[nodiscard]]
+constexpr std::variant<
+    std::monostate,
+    cu0::Strand::SetDetachedError
+> cu0::Strand::detach<cu0::Strand::Stage::LAUNCHED>();
+#endif
+```
+
+detaches this strand
 
 _Returns_
 
@@ -2270,7 +2500,8 @@ std::variant<std::monostate>
 cu0::Strand::run();
 ```
 
-runs a task specified by `this->task_` in a new thread, i.e. launches this strand
+runs a task specified by `this->task_` in a new thread, i.e. launches this 
+strand
 
 _Returns_
 

@@ -1,3 +1,5 @@
 #include <cu0/cu0.hxx>
 
-int main() {}
+int main() {
+  //! this executable checks compile-ability with cu0/cu0.hxx included
+}

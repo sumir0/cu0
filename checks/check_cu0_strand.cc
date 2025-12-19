@@ -268,6 +268,175 @@ cu0::Strand::priority<cu0::Strand::Stage::LAUNCHED>(const priority_type&) will \
 not be checked
 #endif
 
+#if __has_include(<pthread.h>)
+  {
+    auto strandForDetachCreateVariant = cu0::Strand::create([](){ return; });
+    assert(std::holds_alternative<cu0::Strand>(strandForDetachCreateVariant));
+
+    auto& strandForDetach = std::get<cu0::Strand>(strandForDetachCreateVariant);
+
+    {
+      const auto detachedVariant =
+          strandForDetach.detached<cu0::Strand::Stage::NOT_LAUNCHED>();
+      assert(std::holds_alternative<bool>(detachedVariant));
+      const auto& detached = std::get<bool>(detachedVariant);
+      assert(!detached);
+    }
+    {
+      const auto detachedVariant =
+          strandForDetach.detached<cu0::Strand::Stage::NOT_LAUNCHED>();
+      assert(std::holds_alternative<bool>(detachedVariant));
+      const auto& detached = std::get<bool>(detachedVariant);
+      assert(!detached);
+    }
+    {
+      const auto detachedVariant =
+          strandForDetach.detached<cu0::Strand::Stage::NOT_LAUNCHED>(false);
+      assert(std::holds_alternative<std::monostate>(detachedVariant));
+    }
+    {
+      const auto detachedVariant =
+          strandForDetach.detached<cu0::Strand::Stage::NOT_LAUNCHED>();
+      assert(std::holds_alternative<bool>(detachedVariant));
+      const auto& detached = std::get<bool>(detachedVariant);
+      assert(!detached);
+    }
+    {
+      const auto detachedVariant =
+          strandForDetach.detached<cu0::Strand::Stage::NOT_LAUNCHED>();
+      assert(std::holds_alternative<bool>(detachedVariant));
+      const auto& detached = std::get<bool>(detachedVariant);
+      assert(!detached);
+    }
+    {
+      const auto detachedVariant =
+          strandForDetach.detached<cu0::Strand::Stage::NOT_LAUNCHED>(true);
+      assert(std::holds_alternative<std::monostate>(detachedVariant));
+    }
+    {
+      const auto detachedVariant =
+          strandForDetach.detached<cu0::Strand::Stage::NOT_LAUNCHED>();
+      assert(std::holds_alternative<bool>(detachedVariant));
+      const auto& detached = std::get<bool>(detachedVariant);
+      assert(detached);
+    }
+    {
+      const auto detachedVariant =
+          strandForDetach.detached<cu0::Strand::Stage::NOT_LAUNCHED>();
+      assert(std::holds_alternative<bool>(detachedVariant));
+      const auto& detached = std::get<bool>(detachedVariant);
+      assert(detached);
+    }
+    {
+      const auto detachedVariant =
+          strandForDetach.detached<cu0::Strand::Stage::NOT_LAUNCHED>(false);
+      assert(std::holds_alternative<std::monostate>(detachedVariant));
+    }
+    {
+      const auto detachedVariant =
+          strandForDetach.detached<cu0::Strand::Stage::NOT_LAUNCHED>();
+      assert(std::holds_alternative<bool>(detachedVariant));
+      const auto& detached = std::get<bool>(detachedVariant);
+      assert(!detached);
+    }
+    {
+      const auto detachedVariant =
+          strandForDetach.detached<cu0::Strand::Stage::NOT_LAUNCHED>();
+      assert(std::holds_alternative<bool>(detachedVariant));
+      const auto& detached = std::get<bool>(detachedVariant);
+      assert(!detached);
+    }
+    {
+      const auto detachedVariant =
+          strandForDetach.detached<cu0::Strand::Stage::NOT_LAUNCHED>(false);
+      assert(std::holds_alternative<std::monostate>(detachedVariant));
+    }
+    {
+      const auto detachedVariant =
+          strandForDetach.detached<cu0::Strand::Stage::NOT_LAUNCHED>();
+      assert(std::holds_alternative<bool>(detachedVariant));
+      const auto& detached = std::get<bool>(detachedVariant);
+      assert(!detached);
+    }
+    {
+      const auto detachedVariant =
+          strandForDetach.detached<cu0::Strand::Stage::NOT_LAUNCHED>();
+      assert(std::holds_alternative<bool>(detachedVariant));
+      const auto& detached = std::get<bool>(detachedVariant);
+      assert(!detached);
+    }
+    {
+      const auto detachedVariant =
+          strandForDetach.detached<cu0::Strand::Stage::NOT_LAUNCHED>(true);
+      assert(std::holds_alternative<std::monostate>(detachedVariant));
+    }
+    {
+      const auto detachedVariant =
+          strandForDetach.detached<cu0::Strand::Stage::NOT_LAUNCHED>();
+      assert(std::holds_alternative<bool>(detachedVariant));
+      const auto& detached = std::get<bool>(detachedVariant);
+      assert(detached);
+    }
+    {
+      const auto detachedVariant =
+          strandForDetach.detached<cu0::Strand::Stage::NOT_LAUNCHED>();
+      assert(std::holds_alternative<bool>(detachedVariant));
+      const auto& detached = std::get<bool>(detachedVariant);
+      assert(detached);
+    }
+    {
+      const auto detachedVariant =
+          strandForDetach.detached<cu0::Strand::Stage::NOT_LAUNCHED>(true);
+      assert(std::holds_alternative<std::monostate>(detachedVariant));
+    }
+    {
+      const auto detachedVariant =
+          strandForDetach.detached<cu0::Strand::Stage::NOT_LAUNCHED>();
+      assert(std::holds_alternative<bool>(detachedVariant));
+      const auto& detached = std::get<bool>(detachedVariant);
+      assert(detached);
+    }
+    {
+      const auto detachedVariant =
+          strandForDetach.detached<cu0::Strand::Stage::NOT_LAUNCHED>();
+      assert(std::holds_alternative<bool>(detachedVariant));
+      const auto& detached = std::get<bool>(detachedVariant);
+      assert(detached);
+    }
+  }
+#else
+#warning <pthread.h> is not found => \
+cu0::Strand::detached<cu0::Strand::Stage::NOT_LAUNCHED>() will not be checked
+#warning <pthread.h> is not found => \
+cu0::Strand::detached<cu0::Strand::Stage::NOT_LAUNCHED>(const bool) will not \
+be checked
+#endif
+
+#if __has_include(<pthread.h>)
+  {
+    auto strandForDetachCreateVariant = cu0::Strand::create([](){ return; });
+    assert(std::holds_alternative<cu0::Strand>(strandForDetachCreateVariant));
+
+    auto& strandForDetach = std::get<cu0::Strand>(strandForDetachCreateVariant);
+
+    //! detach before launch will result in unsoecified behaviour
+    {
+      const auto runVariant = strandForDetach.run();
+      assert(std::holds_alternative<std::monostate>(runVariant));
+    }
+
+    {
+      const auto detachVariant =
+          strandForDetach.detach<cu0::Strand::Stage::LAUNCHED>();
+      assert(std::holds_alternative<std::monostate>(detachVariant));
+    }
+    //! repeat of detach will result in unspecified behaviour
+  }
+#else
+#warning <pthread.h> is not found => \
+cu0::Strand::detach<cu0::Strand::Stage::LAUNCHED>() will not be checked
+#endif
+
   //! check join function
   const auto joinVariant = strand.join();
   assert(std::holds_alternative<std::monostate>(joinVariant));

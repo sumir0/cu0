@@ -21,6 +21,10 @@ cu0::Strand::GetPolicyError will not be supported
 #warning <pthread.h> is not found => \
 cu0::Strand::SetPolicyError will not be supported
 #warning <pthread.h> is not found => \
+cu0::Strand::GetDetachedError will not be supported
+#warning <pthread.h> is not found => \
+cu0::Strand::SetDetachedError will not be supported
+#warning <pthread.h> is not found => \
 cu0::Strand::InitError will not be supported
 #warning <pthread.h> is not found => \
 cu0::Strand::RunError will not be supported
@@ -34,6 +38,12 @@ cu0::Strand::priority(const priority_type&) will not be supported
 cu0::Strand::scheduling() will not be supported
 #warning <pthread.h> is not found => \
 cu0::Strand::scheduling(const Scheduling&) will not be supported
+#warning <pthread.h> is not found => \
+cu0::Strand::detached() will not be supported
+#warning <pthread.h> is not found => \
+cu0::Strand::detached(const bool) will not be supported
+#warning <pthread.h> is not found => \
+cu0::Strand::detach() will not be supported
 #endif
 
 #include <functional>
@@ -118,6 +128,17 @@ public:
     PTHREAD_NOTSUP = ENOTSUP, //! unsupported policy was specified
     PTHREAD_INVAL = EINVAL, //! invalid policy was specified
     PTHREAD_PERM = EPERM, //! current privileges are not enough
+  };
+#endif
+#if __has_include(<pthread.h>)
+  //! errors related to retrieval of a status of the detached state
+  enum struct GetDetachedError {
+  };
+#endif
+#if __has_include(<pthread.h>)
+  //! errors related to modification of a status of the detached state
+  enum struct SetDetachedError {
+    PTHREAD_INVAL = EINVAL, //! this running strand is not detachable
   };
 #endif
 #if __has_include(<pthread.h>)
@@ -323,6 +344,100 @@ public:
       SetPolicyError,
       SetPriorityError
   > scheduling<Stage::LAUNCHED>(const Scheduling& scheduling);
+#endif
+#endif
+#if __has_include(<pthread.h>)
+  /*!
+   * @brief gets a status of the detached state of this strand
+   * @note deleted | actual implementations are provided through specializations
+   * @return
+   *     if no error was reported => status of the detached state
+   *     else => error code
+   */
+  template <Stage stage>
+  constexpr std::variant<
+      bool,
+      GetDetachedError
+  > detached() const = delete;
+#ifndef CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
+  /*!
+   * @brief gets a status of the detached state with which this strand will be
+   *     launched
+   * @return
+   *     if no error was reported => status of the detached state
+   *     else => error code
+   */
+  template <>
+  constexpr std::variant<
+      bool,
+      GetDetachedError
+  > detached<Stage::NOT_LAUNCHED>() const;
+  /*!
+   * @brief gets a status of the detached state with which this strand is
+   *     running
+   * @note deleted | not supported
+   * @return
+   *     if no error was reported => status of the detached state
+   *     else => error code
+   */
+  template <>
+  constexpr std::variant<
+      bool,
+      GetDetachedError
+  > detached<Stage::LAUNCHED>() const = delete;
+#endif
+#endif
+#if __has_include(<pthread.h>)
+  /*!
+   * @brief sets a status of the detached state of this strand
+   * @note deleted | actual implementations are provided through specializations
+   * @param detached is the flag specifying if this strand needs to be detached
+   * @return
+   *     if no error was reported => std::monostate
+   *     else => error code
+   */
+  template <Stage stage>
+  constexpr std::variant<
+      std::monostate,
+      SetDetachedError
+  > detached(const bool detached) = delete;
+  /*!
+   * @brief detaches this strand
+   * @note deleted | actual implementations are provided through specializations
+   * @return
+   *     if no error was reported => std::monostate
+   *     else => error code
+   */
+  template <Stage stage>
+  constexpr std::variant<
+      std::monostate,
+      SetDetachedError
+  > detach() = delete;
+#ifndef CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
+  /*!
+   * @brief sets a status of the detached state with which this strand will be
+   *     launched
+   * @param detached is the flag specifying if this strand needs to be detached
+   * @return
+   *     if no error was reported => std::monostate
+   *     else => error code
+   */
+  template <>
+  constexpr std::variant<
+      std::monostate,
+      SetDetachedError
+  > detached<Stage::NOT_LAUNCHED>(const bool detached);
+  /*!
+   * @brief detaches this strand
+   * @return
+   *     if no error was reported => std::monostate
+   *     else => error code
+   */
+  template <>
+  constexpr std::variant<
+      std::monostate,
+      SetDetachedError
+  > detach<Stage::LAUNCHED>();
 #endif
 #endif
   /*!
@@ -560,6 +675,55 @@ constexpr std::variant<
   );
   if (res != 0) {
     return static_cast<SetPolicyError>(res);
+  }
+  return std::monostate{};
+}
+#endif
+
+#if __has_include(<pthread.h>)
+template <>
+constexpr std::variant<
+    bool,
+    typename Strand::GetDetachedError
+> Strand::detached<Strand::Stage::NOT_LAUNCHED>() const {
+  int detached;
+  const auto detachStateGetResult = pthread_attr_getdetachstate(
+      &this->attr_,
+      &detached
+  );
+  if (detachStateGetResult != 0) {
+    return static_cast<GetDetachedError>(detachStateGetResult);
+  }
+  return detached == PTHREAD_CREATE_DETACHED;
+}
+#endif
+
+#if __has_include(<pthread.h>)
+template <>
+constexpr std::variant<
+    std::monostate,
+    typename Strand::SetDetachedError
+> Strand::detached<Strand::Stage::NOT_LAUNCHED>(
+    const bool detached
+) {
+  const auto detachStateSetResult = pthread_attr_setdetachstate(
+      &this->attr_,
+      detached ? PTHREAD_CREATE_DETACHED : PTHREAD_CREATE_JOINABLE
+  );
+  if (detachStateSetResult != 0) {
+    return static_cast<SetDetachedError>(detachStateSetResult);
+  }
+  return std::monostate{};
+}
+
+template <>
+constexpr std::variant<
+    std::monostate,
+    typename Strand::SetDetachedError
+> Strand::detach<Strand::Stage::LAUNCHED>() {
+  const auto detachResult = pthread_detach(this->thread_);
+  if (detachResult != 0) {
+    return static_cast<SetDetachedError>(detachResult);
   }
   return std::monostate{};
 }
