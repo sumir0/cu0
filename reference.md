@@ -1882,14 +1882,6 @@ errors related to modification of a status of the detached state
 ---
 
 ```c++
-cu0::Strand::InitError::PTHREAD_INVAL = EINVAL,
-```
-
-this running strand is not detachable
-
----
-
-```c++
 #if __has_include(<pthread.h>)
 public:
 enum struct cu0::Strand::InitError;
@@ -1953,6 +1945,25 @@ cu0::Strand::JoinError::PTHREAD_DEADLK = EDEADLK,
 ```
 
 deadlock was detected
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+public:
+enum struct cu0::Strand::SetDetachedError;
+#endif
+```
+
+errors related to detaching of a strand
+
+---
+
+```c++
+cu0::Strand::InitError::PTHREAD_INVAL = EINVAL,
+```
+
+strand is not detachable
 
 ---
 
@@ -2414,31 +2425,6 @@ else => error code
 ```c++
 #if __has_include(<pthread.h>)
 public:
-template <cu0::Strand::Stage stage>
-[[nodiscard]]
-constexpr std::variant<
-    std::monostate,
-    cu0::Strand::SetDetachedError
-> cu0::Strand::detach() = delete;
-#endif
-```
-
-detaches this strand
-
-> **_NOTE:_** deleted | actual implementations are provided through 
-specializations
-
-_Returns_
-
-if no error was reported => std::monostate
-
-else => error code
-
----
-
-```c++
-#if __has_include(<pthread.h>)
-public:
 template <>
 [[nodiscard]]
 constexpr std::variant<
@@ -2472,11 +2458,19 @@ template <>
 constexpr std::variant<
     std::monostate,
     cu0::Strand::SetDetachedError
-> cu0::Strand::detach<cu0::Strand::Stage::LAUNCHED>();
+> cu0::Strand::detached<cu0::Strand::Stage::LAUNCHED>(
+    const bool detached
+) = delete;
 #endif
 ```
 
-detaches this strand
+sets a status of the detached state with which this strand is running
+
+> **_NOTE:_** deleted | not supported
+
+_Parameters_
+
+detached is the flag specifying if this strand needs to be detached
 
 _Returns_
 
@@ -2525,6 +2519,27 @@ cu0::Strand::join();
 ```
 
 joins to this strand, i.e. waits for the strand to exit
+
+_Returns_
+
+if no error was reported => std::monostate
+
+else => error code
+
+---
+
+```c++
+public:
+[[nodiscard]]
+#if __has_include(<pthread.h>)
+  constexpr std::variant<std::monostate, cu0::Strand::DetachError>
+#else
+  std::variant<std::monostate>
+#endif
+cu0::Strand::detach();
+```
+
+detaches this strand
 
 _Returns_
 

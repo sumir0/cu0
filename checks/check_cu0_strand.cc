@@ -1,6 +1,8 @@
 #include <cu0/proc/strand.hh>
 #include <atomic> //! for storing task execution result
 #include <cassert>
+#include <thread> //! for a sleep inside a strand
+#include <chrono> //! for specifying a sleep duration
 #if __has_include(<pthread.h>)
   #include <pthread.h> //! for validating priority and policy
 #endif
@@ -35,7 +37,13 @@ int main() {
     assert(atomic == true);
   }
 
-  auto strandCreateVariant = cu0::Strand::create([](){ return; });
+  auto stop = std::atomic<bool>(false);
+  auto strandCreateVariant = cu0::Strand::create([&stop]() {
+    while (!stop) {
+      std::this_thread::sleep_for(std::chrono::milliseconds{256});
+    };
+    return;
+  });
   assert(std::holds_alternative<cu0::Strand>(strandCreateVariant));
 
   auto& strand = std::get<cu0::Strand>(strandCreateVariant);
@@ -412,14 +420,13 @@ cu0::Strand::detached<cu0::Strand::Stage::NOT_LAUNCHED>(const bool) will not \
 be checked
 #endif
 
-#if __has_include(<pthread.h>)
   {
     auto strandForDetachCreateVariant = cu0::Strand::create([](){ return; });
     assert(std::holds_alternative<cu0::Strand>(strandForDetachCreateVariant));
 
     auto& strandForDetach = std::get<cu0::Strand>(strandForDetachCreateVariant);
 
-    //! detach before launch will result in unsoecified behaviour
+    //! detach before launch will result in unspecified behaviour
     {
       const auto runVariant = strandForDetach.run();
       assert(std::holds_alternative<std::monostate>(runVariant));
@@ -427,17 +434,14 @@ be checked
 
     {
       const auto detachVariant =
-          strandForDetach.detach<cu0::Strand::Stage::LAUNCHED>();
+          strandForDetach.detach();
       assert(std::holds_alternative<std::monostate>(detachVariant));
     }
     //! repeat of detach will result in unspecified behaviour
   }
-#else
-#warning <pthread.h> is not found => \
-cu0::Strand::detach<cu0::Strand::Stage::LAUNCHED>() will not be checked
-#endif
 
   //! check join function
+  stop = true;
   const auto joinVariant = strand.join();
   assert(std::holds_alternative<std::monostate>(joinVariant));
 

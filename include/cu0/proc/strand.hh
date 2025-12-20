@@ -42,8 +42,6 @@ cu0::Strand::scheduling(const Scheduling&) will not be supported
 cu0::Strand::detached() will not be supported
 #warning <pthread.h> is not found => \
 cu0::Strand::detached(const bool) will not be supported
-#warning <pthread.h> is not found => \
-cu0::Strand::detach() will not be supported
 #endif
 
 #include <functional>
@@ -138,7 +136,6 @@ public:
 #if __has_include(<pthread.h>)
   //! errors related to modification of a status of the detached state
   enum struct SetDetachedError {
-    PTHREAD_INVAL = EINVAL, //! this running strand is not detachable
   };
 #endif
 #if __has_include(<pthread.h>)
@@ -160,6 +157,12 @@ public:
   //! errors related to joining to a strand
   enum struct JoinError {
     PTHREAD_DEADLK = EDEADLK, //! deadlock was detected
+  };
+#endif
+#if __has_include(<pthread.h>)
+  //! errors related to detaching of a strand
+  enum struct DetachError {
+    PTHREAD_INVAL = EINVAL, //! strand is not detachable
   };
 #endif
   /*
@@ -190,7 +193,7 @@ public:
       priority_type,
       GetPriorityError
   > priority() const = delete;
-#ifndef CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
+#if !CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
   /*!
    * @brief gets a priority with which this strand will be launched
    * @return
@@ -230,7 +233,7 @@ public:
   constexpr std::variant<std::monostate, SetPriorityError> priority(
       const priority_type& priority
   ) = delete;
-#ifndef CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
+#if !CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
   /*!
    * @brief sets a priority with which this strand will be launched
    * @param priority is the priority to be set
@@ -270,7 +273,7 @@ public:
       GetPolicyError,
       GetPriorityError
   > scheduling() const = delete;
-#ifndef CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
+#if !CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
   /*!
    * @brief gets scheduling parameters with which this strand will be launched
    * @return
@@ -315,7 +318,7 @@ public:
       SetPolicyError,
       SetPriorityError
   > scheduling(const Scheduling& scheduling) = delete;
-#ifndef CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
+#if !CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
   /*!
    * @brief sets scheduling parameters with which this strand will be launched
    * @param scheduling is the scheduling parameters to be set
@@ -359,7 +362,7 @@ public:
       bool,
       GetDetachedError
   > detached() const = delete;
-#ifndef CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
+#if !CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
   /*!
    * @brief gets a status of the detached state with which this strand will be
    *     launched
@@ -401,19 +404,7 @@ public:
       std::monostate,
       SetDetachedError
   > detached(const bool detached) = delete;
-  /*!
-   * @brief detaches this strand
-   * @note deleted | actual implementations are provided through specializations
-   * @return
-   *     if no error was reported => std::monostate
-   *     else => error code
-   */
-  template <Stage stage>
-  constexpr std::variant<
-      std::monostate,
-      SetDetachedError
-  > detach() = delete;
-#ifndef CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
+#if !CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
   /*!
    * @brief sets a status of the detached state with which this strand will be
    *     launched
@@ -428,7 +419,10 @@ public:
       SetDetachedError
   > detached<Stage::NOT_LAUNCHED>(const bool detached);
   /*!
-   * @brief detaches this strand
+   * @brief sets a status of the detached state with which this strand is
+   *     running
+   * @note deleted | not supported
+   * @param detached is the flag specifying if this strand needs to be detached
    * @return
    *     if no error was reported => std::monostate
    *     else => error code
@@ -437,7 +431,7 @@ public:
   constexpr std::variant<
       std::monostate,
       SetDetachedError
-  > detach<Stage::LAUNCHED>();
+  > detached<Stage::LAUNCHED>(const bool detached) = delete;
 #endif
 #endif
   /*!
@@ -465,6 +459,18 @@ public:
   std::variant<std::monostate>
 #endif
       join();
+  /*!
+   * @brief detaches this strand
+   * @return
+   *     if no error was reported => std::monostate
+   *     else => error code
+   */
+#if __has_include(<pthread.h>)
+  constexpr std::variant<std::monostate, DetachError>
+#else
+  std::variant<std::monostate>
+#endif
+      detach();
 protected:
   /*!
    * @brief default ctor
@@ -680,55 +686,6 @@ constexpr std::variant<
 }
 #endif
 
-#if __has_include(<pthread.h>)
-template <>
-constexpr std::variant<
-    bool,
-    typename Strand::GetDetachedError
-> Strand::detached<Strand::Stage::NOT_LAUNCHED>() const {
-  int detached;
-  const auto detachStateGetResult = pthread_attr_getdetachstate(
-      &this->attr_,
-      &detached
-  );
-  if (detachStateGetResult != 0) {
-    return static_cast<GetDetachedError>(detachStateGetResult);
-  }
-  return detached == PTHREAD_CREATE_DETACHED;
-}
-#endif
-
-#if __has_include(<pthread.h>)
-template <>
-constexpr std::variant<
-    std::monostate,
-    typename Strand::SetDetachedError
-> Strand::detached<Strand::Stage::NOT_LAUNCHED>(
-    const bool detached
-) {
-  const auto detachStateSetResult = pthread_attr_setdetachstate(
-      &this->attr_,
-      detached ? PTHREAD_CREATE_DETACHED : PTHREAD_CREATE_JOINABLE
-  );
-  if (detachStateSetResult != 0) {
-    return static_cast<SetDetachedError>(detachStateSetResult);
-  }
-  return std::monostate{};
-}
-
-template <>
-constexpr std::variant<
-    std::monostate,
-    typename Strand::SetDetachedError
-> Strand::detach<Strand::Stage::LAUNCHED>() {
-  const auto detachResult = pthread_detach(this->thread_);
-  if (detachResult != 0) {
-    return static_cast<SetDetachedError>(detachResult);
-  }
-  return std::monostate{};
-}
-#endif
-
 inline
 #if __has_include(<pthread.h>)
 std::variant<
@@ -774,6 +731,63 @@ Strand::join() {
   }
 #else
   this->thread_.join();
+#endif
+  return std::monostate{};
+}
+
+#if __has_include(<pthread.h>)
+template <>
+constexpr std::variant<
+    bool,
+    typename Strand::GetDetachedError
+> Strand::detached<Strand::Stage::NOT_LAUNCHED>() const {
+  int detached;
+  const auto detachStateGetResult = pthread_attr_getdetachstate(
+      &this->attr_,
+      &detached
+  );
+  if (detachStateGetResult != 0) {
+    return static_cast<GetDetachedError>(detachStateGetResult);
+  }
+  return detached == PTHREAD_CREATE_DETACHED;
+}
+#endif
+
+#if __has_include(<pthread.h>)
+template <>
+constexpr std::variant<
+    std::monostate,
+    typename Strand::SetDetachedError
+> Strand::detached<Strand::Stage::NOT_LAUNCHED>(
+    const bool detached
+) {
+  const auto detachStateSetResult = pthread_attr_setdetachstate(
+      &this->attr_,
+      detached ? PTHREAD_CREATE_DETACHED : PTHREAD_CREATE_JOINABLE
+  );
+  if (detachStateSetResult != 0) {
+    return static_cast<SetDetachedError>(detachStateSetResult);
+  }
+  return std::monostate{};
+}
+#endif
+
+#if __has_include(<pthread.h>)
+constexpr std::variant<
+    std::monostate,
+    typename Strand::DetachError
+>
+#else
+std::variant<std::monostate>
+#endif
+Strand::detach() {
+#if __has_include(<pthread.h>)
+  const auto detachResult = pthread_detach(this->thread_);
+  if (detachResult != 0) {
+    return static_cast<DetachError>(detachResult);
+  }
+#else
+  thread.detach();
 #endif
   return std::monostate{};
 }

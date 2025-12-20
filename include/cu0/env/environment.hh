@@ -48,7 +48,7 @@ public:
   template <class Return>
   [[nodiscard]]
   constexpr static Return as() = delete;
-#ifndef CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
+#if !CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
 #if __has_include(<unistd.h>)
   /*!
    * @note specialization of Environment::as()
