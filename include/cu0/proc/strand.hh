@@ -42,17 +42,37 @@ cu0::Strand::scheduling(const Scheduling&) will not be supported
 cu0::Strand::detached() will not be supported
 #warning <pthread.h> is not found => \
 cu0::Strand::detached(const bool) will not be supported
+#warning <pthread.h> is not found => \
+cu0::Strand::stackSize() will not be supported
+#warning <pthread.h> is not found => \
+cu0::Strand::allocateStack(const std::size_t) will not be supported
+#endif
+#if !__has_include(<stdlib.h>)
+#warning <stdlib.h> is not found => \
+cu0::Strand::allocateStack(const std::size_t) will not be supported
+#endif
+#if !__has_include(<unistd.h>)
+#warning <unistd.h> is not found => \
+cu0::Strand::allocateStack(const std::size_t) will not be supported
 #endif
 
 #include <functional>
-#include <variant>
 #include <utility>
+#include <variant>
 
 #if __has_include(<pthread.h>)
   #include <cerrno>
   #include <pthread.h>
 #else
   #include <thread>
+#endif
+
+#if __has_include(<stdlib.h>)
+  #include <stdlib.h>
+#endif
+
+#if __has_include(<unistd.h>)
+  #include <unistd.h>
 #endif
 
 namespace cu0 {
@@ -136,6 +156,17 @@ public:
 #if __has_include(<pthread.h>)
   //! errors related to modification of a status of the detached state
   enum struct SetDetachedError {
+  };
+#endif
+#if __has_include(<pthread.h>)
+  //! errors related to retrieval of a stack size
+  enum struct GetStackSizeError {
+  };
+#endif
+#if __has_include(<pthread.h>)
+  //! errors related to modification of a stack size
+  enum struct SetStackSizeError {
+    PTHREAD_INVAL = EINVAL, //! bad aligned or small or big size was specified
   };
 #endif
 #if __has_include(<pthread.h>)
@@ -434,6 +465,132 @@ public:
   > detached<Stage::LAUNCHED>(const bool detached) = delete;
 #endif
 #endif
+#if __has_include(<pthread.h>)
+  /*!
+   * @brief gets stack size to be allocated for this strand
+   * @note deleted | actual implementations are provided through specializations
+   * @return
+   *     if no error was reported => stack size in bytes
+   *     else => error code
+   */
+  template <Stage stage>
+  [[nodiscard]]
+  constexpr std::variant<
+      std::size_t,
+      GetStackSizeError
+  > stackSize() const = delete;
+#if !CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
+  /*!
+   * @brief gets stack size to be allocated for this strand before launch
+   * @return
+   *     if no error was reported => stack size in bytes
+   *     else => error code
+   */
+  template <>
+  [[nodiscard]]
+  constexpr std::variant<
+      std::size_t,
+      GetStackSizeError
+  > stackSize<Stage::NOT_LAUNCHED>() const;
+  /*!
+   * @brief gets stack size allocated for this strand
+   * @note deleted | not supported
+   * @return
+   *     if no error was reported => stack size in bytes
+   *     else => error code
+   */
+  template <>
+  [[nodiscard]]
+  constexpr std::variant<
+      std::size_t,
+      GetStackSizeError
+  > stackSize<Stage::LAUNCHED>() const = delete;
+#endif
+#endif
+#if __has_include(<pthread.h>)
+  /*!
+   * @brief allocates stack for this strand
+   * @note deleted | actual implementations are provided through specializations
+   * @param stackSize is the size of a stack to be allocated in bytes
+   * @return
+   *     if no error was reported => std::monostate
+   *     else => error code
+   */
+  template <Stage stage>
+  constexpr std::variant<
+      std::monostate,
+      SetStackSizeError,
+      ResourceError
+  > allocateStack(const std::size_t stackSize) = delete;
+#if !CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
+#if __has_include(<stdlib.h>) && __has_include(<unistd.h>)
+  /*!
+   * @brief allocates stack for this strand before launch
+   * @note allocated stack should be deallocated @see `deallocateStack`
+   * @param stackSize is the size of a stack to be allocated in bytes
+   * @return
+   *     if no error was reported => std::monostate
+   *     else => error code
+   */
+  template <>
+  std::variant<
+      std::monostate,
+      SetStackSizeError,
+      ResourceError
+  > allocateStack<Stage::NOT_LAUNCHED>(const std::size_t stackSize);
+#endif
+  /*!
+   * @brief allocates stack for this strand after launch
+   * @note deleted | not supported
+   * @param stackSize is the size of a stack to be allocated in bytes
+   * @return
+   *     if no error was reported => std::monostate
+   *     else => error code
+   */
+  template <>
+  constexpr std::variant<
+      std::monostate,
+      SetStackSizeError,
+      ResourceError
+  > allocateStack<Stage::LAUNCHED>(const std::size_t stackSize) = delete;
+#endif
+#endif
+#if __has_include(<pthread.h>)
+  /*!
+   * @brief deallocates stack from this strand
+   * @note deleted | actual implementations are provided through specializations
+   * @return
+   *     if no error was reported => std::monostate
+   */
+  template <Stage stage>
+  constexpr std::variant<
+      std::monostate
+  > deallocateStack() = delete;
+#if !CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
+#if __has_include(<stdlib.h>) && __has_include(<unistd.h>)
+  /*!
+   * @brief deallocates stack from this strand
+   * @note use after `join` if `allocateStack` was called
+   * @return
+   *     if no error was reported => std::monostate
+   */
+  template <>
+  std::variant<
+      std::monostate
+  > deallocateStack<Stage::NOT_LAUNCHED>();
+#endif
+  /*!
+   * @brief deallocates stack for this strand before join
+   * @note deleted | not supported
+   * @return
+   *     if no error was reported => std::monostate
+   */
+  template <>
+  constexpr std::variant<
+      std::monostate
+  > deallocateStack<Stage::LAUNCHED>() = delete;
+#endif
+#endif
   /*!
    * @brief runs a task specified by this->task_ in a new thread,
    *     i.e. launches this strand
@@ -492,6 +649,10 @@ protected:
 #endif
   //! task to be executed after launch
   std::function<void()> task_{};
+#if __has_include(<pthread.h>)
+  //! custom stack which is optinally allocated @see stackSize
+  void* stack_{};
+#endif
 #if __has_include(<pthread.h>)
   //! internal representation of parameters with which a strand is launched
   //! @see Strand::Scheduling
@@ -684,6 +845,69 @@ constexpr std::variant<
   }
   return std::monostate{};
 }
+#endif
+
+#if __has_include(<pthread.h>)
+template <>
+constexpr std::variant<
+    std::size_t,
+    typename Strand::GetStackSizeError
+> Strand::stackSize<Strand::Stage::NOT_LAUNCHED>() const {
+  void* stackAddress;
+  std::size_t stackSize;
+  const auto& getStackResult = pthread_attr_getstack(
+      &this->attr_,
+      &stackAddress,
+      &stackSize
+  );
+  if (getStackResult != 0) {
+    return static_cast<GetStackSizeError>(getStackResult);
+  }
+  return stackSize;
+}
+#endif
+
+#if __has_include(<pthread.h>)
+#if __has_include(<stdlib.h>) && __has_include(<unistd.h>)
+template <>
+std::variant<
+    std::monostate,
+    typename Strand::SetStackSizeError,
+    typename Strand::ResourceError
+> Strand::allocateStack<Strand::Stage::NOT_LAUNCHED>(
+    const std::size_t stackSize
+) {
+  const auto allocateResult = posix_memalign(
+      &this->stack_,
+      sysconf(_SC_PAGE_SIZE),
+      stackSize
+  );
+  if (allocateResult != 0) {
+    return static_cast<ResourceError>(allocateResult);
+  }
+  const auto setStackResult = pthread_attr_setstack(
+      &this->attr_,
+      this->stack_,
+      stackSize
+  );
+  if (setStackResult != 0) {
+    return static_cast<SetStackSizeError>(setStackResult);
+  }
+  return std::monostate{};
+}
+#endif
+#endif
+
+#if __has_include(<pthread.h>)
+#if __has_include(<stdlib.h>) && __has_include(<unistd.h>)
+template <>
+std::variant<
+    std::monostate
+> Strand::deallocateStack<Strand::Stage::NOT_LAUNCHED>() {
+  free(this->stack_);
+  return std::monostate{};
+}
+#endif
 #endif
 
 inline

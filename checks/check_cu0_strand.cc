@@ -4,7 +4,10 @@
 #include <thread> //! for a sleep inside a strand
 #include <chrono> //! for specifying a sleep duration
 #if __has_include(<pthread.h>)
-  #include <pthread.h> //! for validating priority and policy
+  #include <pthread.h> //! for validating priority, policy, and stack size
+#endif
+#if __has_include(<unistd.h>)
+  #include <unistd.h> //! for validating stack size
 #endif
 
 int main() {
@@ -418,6 +421,93 @@ cu0::Strand::detached<cu0::Strand::Stage::NOT_LAUNCHED>() will not be checked
 #warning <pthread.h> is not found => \
 cu0::Strand::detached<cu0::Strand::Stage::NOT_LAUNCHED>(const bool) will not \
 be checked
+#endif
+
+#if __has_include(<pthread.h>)
+  {
+    auto strandForStackSizeCreateVariant = cu0::Strand::create([](){ return; });
+    assert(std::holds_alternative<cu0::Strand>(
+        strandForStackSizeCreateVariant
+    ));
+
+    auto& strandForStackSize =
+        std::get<cu0::Strand>(strandForStackSizeCreateVariant);
+
+    {
+      const auto getStackSizeVariant =
+          strandForStackSize.stackSize<cu0::Strand::Stage::NOT_LAUNCHED>();
+      assert(std::holds_alternative<std::size_t>(getStackSizeVariant));
+      //! default stack size is implementation defined
+    }
+#if __has_include(<stdlib.h>) && __has_include(<unistd.h>)
+      const auto pageSize = sysconf(_SC_PAGE_SIZE);
+      assert(pageSize > 0);
+      const auto minStackSize = (PTHREAD_STACK_MIN / pageSize + 1) * pageSize;
+    {
+      const auto allocateStackVariant =
+          strandForStackSize.allocateStack<cu0::Strand::Stage::NOT_LAUNCHED>(
+              minStackSize
+          );
+      assert(std::holds_alternative<std::monostate>(allocateStackVariant));
+    }
+    {
+      const auto getStackSizeVariant =
+          strandForStackSize.stackSize<cu0::Strand::Stage::NOT_LAUNCHED>();
+      assert(std::holds_alternative<std::size_t>(getStackSizeVariant));
+      const auto stackSize = std::get<std::size_t>(getStackSizeVariant);
+      assert(stackSize == minStackSize);
+    }
+    {
+      const auto getStackSizeVariant =
+          strandForStackSize.stackSize<cu0::Strand::Stage::NOT_LAUNCHED>();
+      assert(std::holds_alternative<std::size_t>(getStackSizeVariant));
+      const auto stackSize = std::get<std::size_t>(getStackSizeVariant);
+      assert(stackSize == minStackSize);
+    }
+    {
+      const auto deallocateStackVariant = strandForStackSize.deallocateStack<
+          cu0::Strand::Stage::NOT_LAUNCHED
+      >();
+      assert(std::holds_alternative<std::monostate>(deallocateStackVariant));
+    }
+    {
+      const auto allocateStackVariant =
+          strandForStackSize.allocateStack<cu0::Strand::Stage::NOT_LAUNCHED>(
+              4 * minStackSize
+          );
+      assert(std::holds_alternative<std::monostate>(allocateStackVariant));
+    }
+    {
+      const auto getStackSizeVariant =
+          strandForStackSize.stackSize<cu0::Strand::Stage::NOT_LAUNCHED>();
+      assert(std::holds_alternative<std::size_t>(getStackSizeVariant));
+      const auto stackSize = std::get<std::size_t>(getStackSizeVariant);
+      assert(stackSize == 4 * minStackSize);
+    }
+    {
+      const auto deallocateStackVariant = strandForStackSize.deallocateStack<
+          cu0::Strand::Stage::NOT_LAUNCHED
+      >();
+      assert(std::holds_alternative<std::monostate>(deallocateStackVariant));
+    }
+  }
+#else
+#warning <stdlib.h> or <unistd.h> is not found => \
+cu0::Strand::allocateStack<cu0::Strand::Stage::NOT_LAUNCHED>(const std::size_t) \
+will not be checked
+#warning <stdlib.h> or <unistd.h> is not found => \
+cu0::Strand::deallocateStack<cu0::Strand::Stage::NOT_LAUNCHED>() \
+will not be checked
+#endif
+#else
+#warning <pthread.h> is not found => \
+cu0::Strand::stackSize<cu0::Strand::Stage::NOT_LAUNCHED>() will not be checked
+#warning <pthread.h> is not found => \
+cu0::Strand::allocateStack<cu0::Strand::Stage::NOT_LAUNCHED>(const \
+std::size_t) will not be checked
+#warning <stdlib.h> or <unistd.h> is not found => \
+cu0::Strand::deallocateStack<cu0::Strand::Stage::NOT_LAUNCHED>() \
+will not be checked
 #endif
 
   {

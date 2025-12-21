@@ -1884,6 +1884,36 @@ errors related to modification of a status of the detached state
 ```c++
 #if __has_include(<pthread.h>)
 public:
+enum struct cu0::Strand::GetStackSizeError;
+#endif
+```
+
+errors related to retrieval of a stack size
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+public:
+enum struct cu0::Strand::SetStackSizeError;
+#endif
+```
+
+errors related to modification of a stack size
+
+---
+
+```c++
+cu0::Strand::SetStackSizeError::PTHREAD_INVAL = EINVAL,
+```
+
+bad aligned or small or big size was specified
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+public:
 enum struct cu0::Strand::InitError;
 #endif
 ```
@@ -2477,6 +2507,225 @@ _Returns_
 if no error was reported => std::monostate
 
 else => error code
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+template <cu0::Strand::Stage stage>
+[[nodiscard]]
+constexpr std::variant<
+    std::size_t,
+    cu0::Strand::GetStackSizeError
+> cu0::Strand::stackSize() const = delete;
+#endif
+```
+
+gets stack size to be allocated for this strand
+
+> **_NOTE:_** deleted | actual implementations are provided through 
+specializations
+
+_Returns_
+
+if no error was reported => stack size in bytes
+
+else => error code
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+template <>
+[[nodiscard]]
+constexpr std::variant<
+    std::size_t,
+    cu0::Strand::GetStackSizeError
+> stackSize<cu0::Strand::Stage::NOT_LAUNCHED>() const;
+#endif
+```
+
+gets stack size to be allocated for this strand before launch
+
+_Returns_
+
+if no error was reported => stack size in bytes
+
+else => error code
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+template <>
+[[nodiscard]]
+constexpr std::variant<
+    std::size_t,
+    cu0::Strand::GetStackSizeError
+> stackSize<cu0::Strand::Stage::LAUNCHED>() const = delete;
+#endif
+```
+
+gets stack size allocated for this strand
+
+> **_NOTE:_** deleted | not supported
+
+_Returns_
+
+if no error was reported => stack size in bytes
+
+else => error code
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+template <cu0::Strand::Stage stage>
+constexpr std::variant<
+    std::monostate,
+    cu0::Strand::SetStackSizeError,
+    cu0::Strand::ResourceError
+> cu0::Strand::allocateStack(const std::size_t stackSize) = delete;
+#endif
+```
+
+allocates stack for this strand
+
+> **_NOTE:_** deleted | actual implementations are provided through 
+specializations
+
+_Parameters_
+
+stackSize is the size of a stack to be allocated in bytes
+
+_Returns_
+
+if no error was reported => std::monostate
+
+else => error code
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+#if __has_include(<stdlib.h>) && __has_include(<unistd.h>)
+template <>
+constexpr std::variant<
+    std::monostate,
+    cu0::Strand::SetStackSizeError,
+    cu0::Strand::ResourceError
+> cu0::Strand::allocateStack<cu0::Strand::Stage::NOT_LAUNCHED>(
+    const std::size_t stackSize
+);
+#endif
+#endif
+```
+
+allocates stack for this strand before launch
+
+> **_NOTE:_** allocated stack should be deallocated
+
+> **_SEE:_** `cu0::Strand::deallocateStack()`
+
+_Parameters_
+
+stackSize is the size of a stack to be allocated in bytes
+
+_Returns_
+
+if no error was reported => std::monostate
+
+else => error code
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+template <>
+constexpr std::variant<
+    std::monostate,
+    cu0::Strand::SetStackSizeError,
+    cu0::Strand::ResourceError
+> cu0::Strand::allocateStack<cu0::Strand::Stage::LAUNCHED>(
+    const std::size_t stackSize
+) = delete;
+#endif
+```
+
+allocates stack for this strand after launch
+
+> **_NOTE:_** deleted | not supported
+
+_Parameters_
+
+stackSize is the size of a stack to be allocated in bytes
+
+_Returns_
+
+if no error was reported => std::monostate
+
+else => error code
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+template <cu0::Strand::Stage stage>
+constexpr std::variant<
+    std::monostate
+> cu0::Strand::deallocateStack() = delete;
+#endif
+```
+
+deallocates stack from this strand
+
+> **_NOTE:_** deleted | actual implementations are provided through 
+specializations
+
+_Returns_
+
+if no error was reported => std::monostate
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+#if __has_include(<stdlib.h>) && __has_include(<unistd.h>)
+template <>
+constexpr std::variant<
+    std::monostate
+> cu0::Strand::deallocateStack<cu0::Strand::Stage::NOT_LAUNCHED>();
+#endif
+#endif
+```
+
+deallocates stack from this strand
+
+> **_NOTE:_** use after `cu0::Strand::join()` if 
+`cu0::Strand::allocateStack(std::size_t)` was called
+
+_Returns_
+
+if no error was reported => std::monostate
+
+---
+
+```c++
+#if __has_include(<pthread.h>)
+template <>
+constexpr std::variant<
+    std::monostate
+> cu0::Strand::deallocateStack<cu0::Strand::Stage::LAUNCHED>() = delete;
+#endif
+```
+
+deallocates stack for this strand before join
+
+> **_NOTE:_** deleted | not supported
+
+_Returns_
+
+if no error was reported => std::monostate
 
 ---
 
