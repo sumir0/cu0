@@ -2101,7 +2101,6 @@ else => error code
 #if __has_include(<pthread.h>)
 public:
 template <cu0::Strand::Stage stage>
-[[nodiscard]]
 constexpr std::variant<
     std::monostate,
     cu0::Strand::SetPriorityError
@@ -2132,7 +2131,6 @@ else => error code
 #if __has_include(<pthread.h>)
 public:
 template <>
-[[nodiscard]]
 constexpr std::variant<
     std::monostate,
     cu0::Strand::SetPriorityError
@@ -2160,7 +2158,6 @@ else => error code
 #if __has_include(<pthread.h>)
 public:
 template <>
-[[nodiscard]]
 constexpr std::variant<
     std::monostate,
     cu0::Strand::SetPriorityError
@@ -2262,7 +2259,6 @@ else => error code
 #if __has_include(<pthread.h>)
 public:
 template <cu0::Strand::Stage stage>
-[[nodiscard]]
 constexpr std::variant<
     std::monostate,
     cu0::Strand::SetPolicyError,
@@ -2294,7 +2290,6 @@ else => error code
 #if __has_include(<pthread.h>)
 public:
 template <>
-[[nodiscard]]
 constexpr std::variant<
     std::monostate,
     cu0::Strand::SetPolicyError,
@@ -2323,7 +2318,6 @@ else => error code
 #if __has_include(<pthread.h>)
 public:
 template <>
-[[nodiscard]]
 constexpr std::variant<
     std::monostate,
     cu0::Strand::SetPolicyError,
@@ -2400,32 +2394,7 @@ else => error code
 ```c++
 #if __has_include(<pthread.h>)
 public:
-template <>
-[[nodiscard]]
-constexpr std::variant<
-    bool,
-    cu0::Strand::GetDetachedError
-> cu0::Strand::detached<cu0::Strand::Stage::LAUNCHED>() const = delete;
-#endif
-```
-
-gets a status of the detached state with which this strand is running
-
-> **_NOTE:_** deleted | not supported
-
-_Returns_
-
-if no error was reported => status of the detached state
-
-else => error code
-
----
-
-```c++
-#if __has_include(<pthread.h>)
-public:
 template <cu0::Strand::Stage stage>
-[[nodiscard]]
 constexpr std::variant<
     std::monostate,
     cu0::Strand::SetDetachedError
@@ -2456,7 +2425,6 @@ else => error code
 #if __has_include(<pthread.h>)
 public:
 template <>
-[[nodiscard]]
 constexpr std::variant<
     std::monostate,
     cu0::Strand::SetDetachedError
@@ -2467,36 +2435,6 @@ constexpr std::variant<
 ```
 
 sets a status of the detached state with which this strand will be launched
-
-_Parameters_
-
-detached is the flag specifying if this strand needs to be detached
-
-_Returns_
-
-if no error was reported => std::monostate
-
-else => error code
-
----
-
-```c++
-#if __has_include(<pthread.h>)
-public:
-template <>
-[[nodiscard]]
-constexpr std::variant<
-    std::monostate,
-    cu0::Strand::SetDetachedError
-> cu0::Strand::detached<cu0::Strand::Stage::LAUNCHED>(
-    const bool detached
-) = delete;
-#endif
-```
-
-sets a status of the detached state with which this strand is running
-
-> **_NOTE:_** deleted | not supported
 
 _Parameters_
 
@@ -2546,29 +2484,6 @@ constexpr std::variant<
 ```
 
 gets stack size to be allocated for this strand before launch
-
-_Returns_
-
-if no error was reported => stack size in bytes
-
-else => error code
-
----
-
-```c++
-#if __has_include(<pthread.h>)
-template <>
-[[nodiscard]]
-constexpr std::variant<
-    std::size_t,
-    cu0::Strand::GetStackSizeError
-> stackSize<cu0::Strand::Stage::LAUNCHED>() const = delete;
-#endif
-```
-
-gets stack size allocated for this strand
-
-> **_NOTE:_** deleted | not supported
 
 _Returns_
 
@@ -2641,39 +2556,9 @@ else => error code
 
 ```c++
 #if __has_include(<pthread.h>)
-template <>
-constexpr std::variant<
-    std::monostate,
-    cu0::Strand::SetStackSizeError,
-    cu0::Strand::ResourceError
-> cu0::Strand::allocateStack<cu0::Strand::Stage::LAUNCHED>(
-    const std::size_t stackSize
-) = delete;
-#endif
-```
-
-allocates stack for this strand after launch
-
-> **_NOTE:_** deleted | not supported
-
-_Parameters_
-
-stackSize is the size of a stack to be allocated in bytes
-
-_Returns_
-
-if no error was reported => std::monostate
-
-else => error code
-
----
-
-```c++
-#if __has_include(<pthread.h>)
 template <cu0::Strand::Stage stage>
-constexpr std::variant<
-    std::monostate
-> cu0::Strand::deallocateStack() = delete;
+constexpr std::variant<std::monostate> 
+cu0::Strand::deallocateStack() = delete;
 #endif
 ```
 
@@ -2692,9 +2577,8 @@ if no error was reported => std::monostate
 #if __has_include(<pthread.h>)
 #if __has_include(<stdlib.h>) && __has_include(<unistd.h>)
 template <>
-constexpr std::variant<
-    std::monostate
-> cu0::Strand::deallocateStack<cu0::Strand::Stage::NOT_LAUNCHED>();
+constexpr std::variant<std::monostate> 
+cu0::Strand::deallocateStack<cu0::Strand::Stage::NOT_LAUNCHED>();
 #endif
 #endif
 ```
@@ -2703,25 +2587,6 @@ deallocates stack from this strand
 
 > **_NOTE:_** use after `cu0::Strand::join()` if 
 `cu0::Strand::allocateStack(std::size_t)` was called
-
-_Returns_
-
-if no error was reported => std::monostate
-
----
-
-```c++
-#if __has_include(<pthread.h>)
-template <>
-constexpr std::variant<
-    std::monostate
-> cu0::Strand::deallocateStack<cu0::Strand::Stage::LAUNCHED>() = delete;
-#endif
-```
-
-deallocates stack for this strand before join
-
-> **_NOTE:_** deleted | not supported
 
 _Returns_
 
@@ -2779,7 +2644,6 @@ else => error code
 
 ```c++
 public:
-[[nodiscard]]
 #if __has_include(<pthread.h>)
   constexpr std::variant<std::monostate, cu0::Strand::DetachError>
 #else

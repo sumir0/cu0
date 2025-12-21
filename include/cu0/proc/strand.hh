@@ -41,19 +41,25 @@ cu0::Strand::scheduling(const Scheduling&) will not be supported
 #warning <pthread.h> is not found => \
 cu0::Strand::detached() will not be supported
 #warning <pthread.h> is not found => \
-cu0::Strand::detached(const bool) will not be supported
+cu0::Strand::detached(bool) will not be supported
 #warning <pthread.h> is not found => \
 cu0::Strand::stackSize() will not be supported
 #warning <pthread.h> is not found => \
-cu0::Strand::allocateStack(const std::size_t) will not be supported
+cu0::Strand::allocateStack(std::size_t) will not be supported
+#warning <pthread.h> is not found => \
+cu0::Strand::deallocateStack() will not be supported
 #endif
 #if !__has_include(<stdlib.h>)
 #warning <stdlib.h> is not found => \
-cu0::Strand::allocateStack(const std::size_t) will not be supported
+cu0::Strand::allocateStack(std::size_t) will not be supported
+#warning <stdlib.h> is not found => \
+cu0::Strand::deallocateStack() will not be supported
 #endif
 #if !__has_include(<unistd.h>)
 #warning <unistd.h> is not found => \
-cu0::Strand::allocateStack(const std::size_t) will not be supported
+cu0::Strand::allocateStack(std::size_t) will not be supported
+#warning <unistd.h> is not found => \
+cu0::Strand::deallocateStack() will not be supported
 #endif
 
 #include <functional>
@@ -113,8 +119,9 @@ public:
 #if __has_include(<pthread.h>)
   //! stage of a strand
   enum struct Stage {
-    NOT_LAUNCHED, //! before Strand::run()
-    LAUNCHED, //! after Strand::run() but before Strand::join()
+    NOT_LAUNCHED, //! before `Strand::run()`
+    LAUNCHED, //! after `Strand::run()` but before execution terminates
+    TERMINATED, //! after execution terminates
   };
 #endif
 #if __has_include(<pthread.h>)
@@ -389,6 +396,7 @@ public:
    *     else => error code
    */
   template <Stage stage>
+  [[nodiscard]]
   constexpr std::variant<
       bool,
       GetDetachedError
@@ -402,23 +410,11 @@ public:
    *     else => error code
    */
   template <>
+  [[nodiscard]]
   constexpr std::variant<
       bool,
       GetDetachedError
   > detached<Stage::NOT_LAUNCHED>() const;
-  /*!
-   * @brief gets a status of the detached state with which this strand is
-   *     running
-   * @note deleted | not supported
-   * @return
-   *     if no error was reported => status of the detached state
-   *     else => error code
-   */
-  template <>
-  constexpr std::variant<
-      bool,
-      GetDetachedError
-  > detached<Stage::LAUNCHED>() const = delete;
 #endif
 #endif
 #if __has_include(<pthread.h>)
@@ -449,20 +445,6 @@ public:
       std::monostate,
       SetDetachedError
   > detached<Stage::NOT_LAUNCHED>(const bool detached);
-  /*!
-   * @brief sets a status of the detached state with which this strand is
-   *     running
-   * @note deleted | not supported
-   * @param detached is the flag specifying if this strand needs to be detached
-   * @return
-   *     if no error was reported => std::monostate
-   *     else => error code
-   */
-  template <>
-  constexpr std::variant<
-      std::monostate,
-      SetDetachedError
-  > detached<Stage::LAUNCHED>(const bool detached) = delete;
 #endif
 #endif
 #if __has_include(<pthread.h>)
@@ -492,19 +474,6 @@ public:
       std::size_t,
       GetStackSizeError
   > stackSize<Stage::NOT_LAUNCHED>() const;
-  /*!
-   * @brief gets stack size allocated for this strand
-   * @note deleted | not supported
-   * @return
-   *     if no error was reported => stack size in bytes
-   *     else => error code
-   */
-  template <>
-  [[nodiscard]]
-  constexpr std::variant<
-      std::size_t,
-      GetStackSizeError
-  > stackSize<Stage::LAUNCHED>() const = delete;
 #endif
 #endif
 #if __has_include(<pthread.h>)
@@ -539,20 +508,6 @@ public:
       ResourceError
   > allocateStack<Stage::NOT_LAUNCHED>(const std::size_t stackSize);
 #endif
-  /*!
-   * @brief allocates stack for this strand after launch
-   * @note deleted | not supported
-   * @param stackSize is the size of a stack to be allocated in bytes
-   * @return
-   *     if no error was reported => std::monostate
-   *     else => error code
-   */
-  template <>
-  constexpr std::variant<
-      std::monostate,
-      SetStackSizeError,
-      ResourceError
-  > allocateStack<Stage::LAUNCHED>(const std::size_t stackSize) = delete;
 #endif
 #endif
 #if __has_include(<pthread.h>)
@@ -563,9 +518,7 @@ public:
    *     if no error was reported => std::monostate
    */
   template <Stage stage>
-  constexpr std::variant<
-      std::monostate
-  > deallocateStack() = delete;
+  constexpr std::variant<std::monostate> deallocateStack() = delete;
 #if !CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
 #if __has_include(<stdlib.h>) && __has_include(<unistd.h>)
   /*!
@@ -575,20 +528,8 @@ public:
    *     if no error was reported => std::monostate
    */
   template <>
-  std::variant<
-      std::monostate
-  > deallocateStack<Stage::NOT_LAUNCHED>();
+  std::variant<std::monostate> deallocateStack<Stage::TERMINATED>();
 #endif
-  /*!
-   * @brief deallocates stack for this strand before join
-   * @note deleted | not supported
-   * @return
-   *     if no error was reported => std::monostate
-   */
-  template <>
-  constexpr std::variant<
-      std::monostate
-  > deallocateStack<Stage::LAUNCHED>() = delete;
 #endif
 #endif
   /*!
@@ -903,7 +844,7 @@ std::variant<
 template <>
 std::variant<
     std::monostate
-> Strand::deallocateStack<Strand::Stage::NOT_LAUNCHED>() {
+> Strand::deallocateStack<Strand::Stage::TERMINATED>() {
   free(this->stack_);
   return std::monostate{};
 }

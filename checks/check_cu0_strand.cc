@@ -419,8 +419,8 @@ not be checked
 #warning <pthread.h> is not found => \
 cu0::Strand::detached<cu0::Strand::Stage::NOT_LAUNCHED>() will not be checked
 #warning <pthread.h> is not found => \
-cu0::Strand::detached<cu0::Strand::Stage::NOT_LAUNCHED>(const bool) will not \
-be checked
+cu0::Strand::detached<cu0::Strand::Stage::NOT_LAUNCHED>(bool) will not be \
+checked
 #endif
 
 #if __has_include(<pthread.h>)
@@ -466,7 +466,7 @@ be checked
     }
     {
       const auto deallocateStackVariant = strandForStackSize.deallocateStack<
-          cu0::Strand::Stage::NOT_LAUNCHED
+          cu0::Strand::Stage::TERMINATED
       >();
       assert(std::holds_alternative<std::monostate>(deallocateStackVariant));
     }
@@ -484,29 +484,33 @@ be checked
       const auto stackSize = std::get<std::size_t>(getStackSizeVariant);
       assert(stackSize == 4 * minStackSize);
     }
+    const auto runVariant = strandForStackSize.run();
+    assert(std::holds_alternative<std::monostate>(runVariant));
+    const auto joinVariant = strandForStackSize.join();
+    assert(std::holds_alternative<std::monostate>(joinVariant));
     {
       const auto deallocateStackVariant = strandForStackSize.deallocateStack<
-          cu0::Strand::Stage::NOT_LAUNCHED
+          cu0::Strand::Stage::TERMINATED
       >();
       assert(std::holds_alternative<std::monostate>(deallocateStackVariant));
     }
   }
 #else
 #warning <stdlib.h> or <unistd.h> is not found => \
-cu0::Strand::allocateStack<cu0::Strand::Stage::NOT_LAUNCHED>(const std::size_t) \
+cu0::Strand::allocateStack<cu0::Strand::Stage::NOT_LAUNCHED>(std::size_t) \
 will not be checked
 #warning <stdlib.h> or <unistd.h> is not found => \
-cu0::Strand::deallocateStack<cu0::Strand::Stage::NOT_LAUNCHED>() \
+cu0::Strand::deallocateStack<cu0::Strand::Stage::TERMINATED>() \
 will not be checked
 #endif
 #else
 #warning <pthread.h> is not found => \
 cu0::Strand::stackSize<cu0::Strand::Stage::NOT_LAUNCHED>() will not be checked
 #warning <pthread.h> is not found => \
-cu0::Strand::allocateStack<cu0::Strand::Stage::NOT_LAUNCHED>(const \
-std::size_t) will not be checked
+cu0::Strand::allocateStack<cu0::Strand::Stage::NOT_LAUNCHED>(std::size_t) \
+will not be checked
 #warning <stdlib.h> or <unistd.h> is not found => \
-cu0::Strand::deallocateStack<cu0::Strand::Stage::NOT_LAUNCHED>() \
+cu0::Strand::deallocateStack<cu0::Strand::Stage::TERMINATED>() \
 will not be checked
 #endif
 
