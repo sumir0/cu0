@@ -4,7 +4,7 @@
 int main() {
   //! @note executable can be searched in the current directory and
   //!     in the directories specified by the PATH environment variable
-  const auto executable = cu0::util::findBy("someExecutableName");
+  const auto executable = cu0::util::find_by("someExecutableName");
   //! @note if no executable is found then executable.binary is empty
   if (executable.binary.empty()) {
     std::cout << "Executable with the specified name was not found" << '\n';

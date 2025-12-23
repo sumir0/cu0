@@ -11,14 +11,14 @@ int main() {}
 #else
 
 int main() {
-  auto thisProcess = cu0::Process::current();
-  const auto result = thisProcess.waitCautious();
+  auto this_process = cu0::Process::current();
+  const auto result = this_process.wait_cautious();
   std::string message;
   if (std::holds_alternative<std::monostate>(result)) {
     message = "std::monostate";
   } else {
-    const auto errorCode = std::get<cu0::Process::WaitError>(result);
-    switch (errorCode) {
+    const auto error_code = std::get<cu0::Process::WaitError>(result);
+    switch (error_code) {
     case cu0::Process::WaitError::CHILD:
       message = "cu0::Process::WaitError::CHILD";
       break;
@@ -31,7 +31,7 @@ int main() {
     default:
       message = "cu0::Process::WaitError";
       message += '(';
-      message += std::to_string(static_cast<int>(errorCode));
+      message += std::to_string(static_cast<int>(error_code));
       message += ')';
       break;
     }

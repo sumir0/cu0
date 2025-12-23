@@ -15,15 +15,15 @@ int main() {}
 
 int main() {
   const auto variant = cu0::Process::create(cu0::Executable{
-    .binary = "someExecutable"
+    .binary = "some_executable"
   });
   if (!std::holds_alternative<cu0::Process>(variant)) {
     std::cout << "Error: the process was not created" << '\n';
   }
-  const auto& someProcess = std::get<cu0::Process>(variant);
+  const auto& some_process = std::get<cu0::Process>(variant);
   //! @note not supported on all platforms yet
   //! @note signals the SIGTERM signal to the process
-  someProcess.signal(SIGTERM);
+  some_process.signal(SIGTERM);
 }
 
 #endif

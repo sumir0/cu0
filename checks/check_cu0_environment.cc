@@ -21,8 +21,8 @@ int main() {
       set.insert(key + "=" + value);
     }
     for (char** envp = environ; *envp != NULL; envp++) {
-      const auto actualString = std::string{*envp};
-      assert(set.contains(actualString));
+      const auto actual_string = std::string{*envp};
+      assert(set.contains(actual_string));
     }
   }
   {
@@ -33,8 +33,8 @@ int main() {
       set.insert(variable.key() + "=" + variable.cached().value());
     }
     for (char** envp = environ; *envp != NULL; envp++) {
-      const auto actualString = std::string{*envp};
-      assert(set.contains(actualString));
+      const auto actual_string = std::string{*envp};
+      assert(set.contains(actual_string));
     }
   }
 #else

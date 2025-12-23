@@ -22,57 +22,57 @@ int main() {
     return 1;
   }
   auto& strand = std::get<cu0::Strand>(variant);
-  const auto policyToSet = cu0::Strand::Policy::PTHREAD_OTHER;
-  const auto minPriority =
-      sched_get_priority_min(static_cast<int>(policyToSet));
-  const auto setSchedulingResult =
+  const auto policy_to_set = cu0::Strand::Policy::PTHREAD_OTHER;
+  const auto min_priority =
+      sched_get_priority_min(static_cast<int>(policy_to_set));
+  const auto set_scheduling_result =
       strand.scheduling<cu0::Strand::Stage::NOT_LAUNCHED>({
-        .policy = policyToSet,
-        .priority = minPriority,
+        .policy = policy_to_set,
+        .priority = min_priority,
       });
-  if (!std::holds_alternative<std::monostate>(setSchedulingResult)) {
+  if (!std::holds_alternative<std::monostate>(set_scheduling_result)) {
     std::cout << "Error: the scheduling of the strand couldn't be modified" <<
         '\n';
     return 2;
   }
-  const auto runResult = strand.run();
-  if (!std::holds_alternative<std::monostate>(runResult)) {
+  const auto run_result = strand.run();
+  if (!std::holds_alternative<std::monostate>(run_result)) {
     std::cout << "Error: the strand couldn't be launched" << '\n';
     return 3;
   }
-  const auto getSchedulingResult =
+  const auto get_scheduling_result =
       strand.scheduling<cu0::Strand::Stage::LAUNCHED>();
   if (!std::holds_alternative<typename cu0::Strand::Scheduling>(
-      getSchedulingResult
+      get_scheduling_result
   )) {
     std::cout << "Error: the scheduling of the strand couldn't be retrieved" <<
         '\n';
   } else {
     const auto& scheduling =
-        std::get<typename cu0::Strand::Scheduling>(getSchedulingResult);
+        std::get<typename cu0::Strand::Scheduling>(get_scheduling_result);
     std::cout << "Info: the strand has scheduling == {" << '\n';
-    std::string policyString;
+    std::string policy_string;
     switch (static_cast<int>(scheduling.policy)) {
     case SCHED_OTHER:
-      policyString = "SCHED_OTHER";
+      policy_string = "SCHED_OTHER";
       break;
     case SCHED_FIFO:
-      policyString = "SCHED_FIFO";
+      policy_string = "SCHED_FIFO";
       break;
     case SCHED_RR:
-      policyString = "SCHED_RR";
+      policy_string = "SCHED_RR";
       break;
     default:
-      policyString = "?";
+      policy_string = "?";
       break;
     }
-    std::cout << "  .policy = " << policyString << "," <<
+    std::cout << "  .policy = " << policy_string << "," <<
         '\n';
     std::cout << "  .priority = " << scheduling.priority << "," << '\n';
     std::cout << "}" << '\n';
   }
-  const auto joinResult = strand.join();
-  if (!std::holds_alternative<std::monostate>(joinResult)) {
+  const auto join_result = strand.join();
+  if (!std::holds_alternative<std::monostate>(join_result)) {
     std::cout << "Error: the strand couldn't be joined" << '\n';
   }
 }

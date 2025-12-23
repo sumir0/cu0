@@ -5,7 +5,7 @@
 #warning <pthread.h> is not found => \
 cu0::Strand::Policy will not be supported
 #warning <pthread.h> is not found => \
-cu0::Strand::priority_type will not be supported
+cu0::Strand::PriorityType will not be supported
 #warning <pthread.h> is not found => \
 cu0::Strand::Scheduling will not be supported
 #warning <pthread.h> is not found => \
@@ -33,7 +33,7 @@ cu0::Strand::JoinError will not be supported
 #warning <pthread.h> is not found => \
 cu0::Strand::priority() will not be supported
 #warning <pthread.h> is not found => \
-cu0::Strand::priority(const priority_type&) will not be supported
+cu0::Strand::priority(const PriorityType&) will not be supported
 #warning <pthread.h> is not found => \
 cu0::Strand::scheduling() will not be supported
 #warning <pthread.h> is not found => \
@@ -43,23 +43,23 @@ cu0::Strand::detached() will not be supported
 #warning <pthread.h> is not found => \
 cu0::Strand::detached(bool) will not be supported
 #warning <pthread.h> is not found => \
-cu0::Strand::stackSize() will not be supported
+cu0::Strand::stack_size() will not be supported
 #warning <pthread.h> is not found => \
-cu0::Strand::allocateStack(std::size_t) will not be supported
+cu0::Strand::allocate_stack(std::size_t) will not be supported
 #warning <pthread.h> is not found => \
-cu0::Strand::deallocateStack() will not be supported
+cu0::Strand::deallocate_stack() will not be supported
 #endif
 #if !__has_include(<stdlib.h>)
 #warning <stdlib.h> is not found => \
-cu0::Strand::allocateStack(std::size_t) will not be supported
+cu0::Strand::allocate_stack(std::size_t) will not be supported
 #warning <stdlib.h> is not found => \
-cu0::Strand::deallocateStack() will not be supported
+cu0::Strand::deallocate_stack() will not be supported
 #endif
 #if !__has_include(<unistd.h>)
 #warning <unistd.h> is not found => \
-cu0::Strand::allocateStack(std::size_t) will not be supported
+cu0::Strand::allocate_stack(std::size_t) will not be supported
 #warning <unistd.h> is not found => \
-cu0::Strand::deallocateStack() will not be supported
+cu0::Strand::deallocate_stack() will not be supported
 #endif
 
 #include <functional>
@@ -98,7 +98,7 @@ public:
 #endif
 #if __has_include(<pthread.h>)
   //! underlying priority type
-  using priority_type = std::remove_reference_t<
+  using PriorityType = std::remove_reference_t<
       decltype(std::declval<sched_param>().sched_priority)
   >;
 #endif
@@ -113,7 +113,7 @@ public:
      *     sched_get_priority_max(static_cast<int>(Policy)) to get minimal and
      *     maximal values for the specified policy
      */
-    priority_type priority{};
+    PriorityType priority{};
   };
 #endif
 #if __has_include(<pthread.h>)
@@ -228,7 +228,7 @@ public:
   template <Stage stage>
   [[nodiscard]]
   constexpr std::variant<
-      priority_type,
+      PriorityType,
       GetPriorityError
   > priority() const = delete;
 #if !CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
@@ -241,7 +241,7 @@ public:
   template <>
   [[nodiscard]]
   constexpr std::variant<
-      priority_type,
+      PriorityType,
       GetPriorityError
   > priority<Stage::NOT_LAUNCHED>() const;
   /*!
@@ -253,7 +253,7 @@ public:
   template <>
   [[nodiscard]]
   constexpr std::variant<
-      priority_type,
+      PriorityType,
       GetPriorityError
   > priority<Stage::LAUNCHED>() const;
 #endif
@@ -269,7 +269,7 @@ public:
    */
   template <Stage stage>
   constexpr std::variant<std::monostate, SetPriorityError> priority(
-      const priority_type& priority
+      const PriorityType& priority
   ) = delete;
 #if !CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
   /*!
@@ -282,7 +282,7 @@ public:
   template <>
   constexpr std::variant<std::monostate, SetPriorityError> priority<
       Stage::NOT_LAUNCHED
-  >(const priority_type& priority);
+  >(const PriorityType& priority);
   /*!
    * @brief sets a priority with which this strand will continue to run
    * @param priority is the priority to be set
@@ -293,7 +293,7 @@ public:
   template <>
   constexpr std::variant<std::monostate, SetPriorityError> priority<
       Stage::LAUNCHED
-  >(const priority_type& priority);
+  >(const PriorityType& priority);
 #endif
 #endif
 #if __has_include(<pthread.h>)
@@ -460,7 +460,7 @@ public:
   constexpr std::variant<
       std::size_t,
       GetStackSizeError
-  > stackSize() const = delete;
+  > stack_size() const = delete;
 #if !CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
   /*!
    * @brief gets stack size to be allocated for this strand before launch
@@ -473,14 +473,14 @@ public:
   constexpr std::variant<
       std::size_t,
       GetStackSizeError
-  > stackSize<Stage::NOT_LAUNCHED>() const;
+  > stack_size<Stage::NOT_LAUNCHED>() const;
 #endif
 #endif
 #if __has_include(<pthread.h>)
   /*!
    * @brief allocates stack for this strand
    * @note deleted | actual implementations are provided through specializations
-   * @param stackSize is the size of a stack to be allocated in bytes
+   * @param stack_size is the size of a stack to be allocated in bytes
    * @return
    *     if no error was reported => std::monostate
    *     else => error code
@@ -490,13 +490,13 @@ public:
       std::monostate,
       SetStackSizeError,
       ResourceError
-  > allocateStack(const std::size_t stackSize) = delete;
+  > allocate_stack(const std::size_t stack_size) = delete;
 #if !CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
 #if __has_include(<stdlib.h>) && __has_include(<unistd.h>)
   /*!
    * @brief allocates stack for this strand before launch
-   * @note allocated stack should be deallocated @see `deallocateStack`
-   * @param stackSize is the size of a stack to be allocated in bytes
+   * @note allocated stack should be deallocated @see `deallocate_stack`
+   * @param stack_size is the size of a stack to be allocated in bytes
    * @return
    *     if no error was reported => std::monostate
    *     else => error code
@@ -506,7 +506,7 @@ public:
       std::monostate,
       SetStackSizeError,
       ResourceError
-  > allocateStack<Stage::NOT_LAUNCHED>(const std::size_t stackSize);
+  > allocate_stack<Stage::NOT_LAUNCHED>(const std::size_t stack_size);
 #endif
 #endif
 #endif
@@ -518,7 +518,7 @@ public:
    *     if no error was reported => std::monostate
    */
   template <Stage stage>
-  constexpr std::variant<std::monostate> deallocateStack() = delete;
+  constexpr std::variant<std::monostate> deallocate_stack() = delete;
 #if !CU0_DONT_COMPILE_SPECIALIZATION_DECLARATIONS_IN_STRUCT
 #if __has_include(<stdlib.h>) && __has_include(<unistd.h>)
   /*!
@@ -528,7 +528,7 @@ public:
    *     if no error was reported => std::monostate
    */
   template <>
-  std::variant<std::monostate> deallocateStack<Stage::TERMINATED>();
+  std::variant<std::monostate> deallocate_stack<Stage::TERMINATED>();
 #endif
 #endif
 #endif
@@ -624,14 +624,14 @@ Strand::create(
   auto ret = Strand{};
   ret.task_ = std::move(task);
 #if __has_include(<pthread.h>)
-  const auto attrInitResult = pthread_attr_init(&ret.attr_);
-  if (attrInitResult != 0) {
-    return static_cast<ResourceError>(attrInitResult);
+  const auto attr_init_result = ::pthread_attr_init(&ret.attr_);
+  if (attr_init_result != 0) {
+    return static_cast<ResourceError>(attr_init_result);
   }
-  const auto setInheritSchedResult =
-      pthread_attr_setinheritsched(&ret.attr_, PTHREAD_EXPLICIT_SCHED);
-  if (setInheritSchedResult != 0) {
-    return static_cast<InitError>(setInheritSchedResult);
+  const auto set_inherit_sched_result =
+      ::pthread_attr_setinheritsched(&ret.attr_, PTHREAD_EXPLICIT_SCHED);
+  if (set_inherit_sched_result != 0) {
+    return static_cast<InitError>(set_inherit_sched_result);
   }
 #endif
   return ret;
@@ -640,30 +640,30 @@ Strand::create(
 #if __has_include(<pthread.h>)
 template <>
 constexpr std::variant<
-    typename Strand::priority_type,
+    typename Strand::PriorityType,
     typename Strand::GetPriorityError
 > Strand::priority<Strand::Stage::NOT_LAUNCHED>() const {
-  auto schedParam = sched_param{};
-  const auto res = pthread_attr_getschedparam(&this->attr_, &schedParam);
+  auto sched_param = ::sched_param{};
+  const auto res = ::pthread_attr_getschedparam(&this->attr_, &sched_param);
   if (res != 0) {
     return static_cast<GetPriorityError>(res);
   }
-  return schedParam.sched_priority;
+  return sched_param.sched_priority;
 }
 
 template <>
 constexpr std::variant<
-    typename Strand::priority_type,
+    typename Strand::PriorityType,
     typename Strand::GetPriorityError
 > Strand::priority<Strand::Stage::LAUNCHED>() const {
-  auto schedParam = sched_param{};
-  auto nativePolicy = int{};
+  auto sched_param = ::sched_param{};
+  auto native_policy = int{};
   const auto res =
-      pthread_getschedparam(this->thread_, &nativePolicy, &schedParam);
+      ::pthread_getschedparam(this->thread_, &native_policy, &sched_param);
   if (res != 0) {
     return static_cast<GetPriorityError>(res);
   }
-  return schedParam.sched_priority;
+  return sched_param.sched_priority;
 }
 #endif
 
@@ -672,11 +672,11 @@ template <>
 constexpr std::variant<
     std::monostate,
     typename Strand::SetPriorityError
-> Strand::priority<Strand::Stage::NOT_LAUNCHED>(const priority_type& priority) {
-  const auto schedParam = sched_param{ .sched_priority = priority, };
-  const auto res = pthread_attr_setschedparam(
+> Strand::priority<Strand::Stage::NOT_LAUNCHED>(const PriorityType& priority) {
+  const auto sched_param = ::sched_param{ .sched_priority = priority, };
+  const auto res = ::pthread_attr_setschedparam(
       &this->attr_,
-      &schedParam
+      &sched_param
   );
   if (res != 0) {
     return static_cast<SetPriorityError>(res);
@@ -688,8 +688,8 @@ template <>
 constexpr std::variant<
     std::monostate,
     typename Strand::SetPriorityError
-> Strand::priority<Strand::Stage::LAUNCHED>(const priority_type& priority) {
-  const auto res = pthread_setschedprio(this->thread_, priority);
+> Strand::priority<Strand::Stage::LAUNCHED>(const PriorityType& priority) {
+  const auto res = ::pthread_setschedprio(this->thread_, priority);
   if (res != 0) {
     return static_cast<SetPriorityError>(res);
   }
@@ -704,21 +704,21 @@ constexpr std::variant<
     typename Strand::GetPolicyError,
     typename Strand::GetPriorityError
 > Strand::scheduling<Strand::Stage::NOT_LAUNCHED>() const {
-  auto nativePolicy = int{};
-  auto schedParam = sched_param{};
-  const auto policyGetResult =
-      pthread_attr_getschedpolicy(&this->attr_, &nativePolicy);
-  if (policyGetResult != 0) {
-    return static_cast<GetPolicyError>(policyGetResult);
+  auto native_policy = int{};
+  auto sched_param = ::sched_param{};
+  const auto policy_get_result =
+      ::pthread_attr_getschedpolicy(&this->attr_, &native_policy);
+  if (policy_get_result != 0) {
+    return static_cast<GetPolicyError>(policy_get_result);
   }
-  const auto priorityGetResult =
-      pthread_attr_getschedparam(&this->attr_, &schedParam);
-  if (priorityGetResult != 0) {
-    return static_cast<GetPriorityError>(priorityGetResult);
+  const auto priority_get_result =
+      ::pthread_attr_getschedparam(&this->attr_, &sched_param);
+  if (priority_get_result != 0) {
+    return static_cast<GetPriorityError>(priority_get_result);
   }
   return Scheduling{
-    .policy = static_cast<Policy>(nativePolicy),
-    .priority = schedParam.sched_priority,
+    .policy = static_cast<Policy>(native_policy),
+    .priority = sched_param.sched_priority,
   };
 }
 
@@ -728,16 +728,16 @@ constexpr std::variant<
     typename Strand::GetPolicyError,
     typename Strand::GetPriorityError
 > Strand::scheduling<Strand::Stage::LAUNCHED>() const {
-  auto nativePolicy = int{};
-  auto schedParam = sched_param{};
+  auto native_policy = int{};
+  auto sched_param = ::sched_param{};
   const auto res =
-      pthread_getschedparam(this->thread_, &nativePolicy, &schedParam);
+      ::pthread_getschedparam(this->thread_, &native_policy, &sched_param);
   if (res != 0) {
     return static_cast<GetPolicyError>(res);
   }
   return Scheduling{
-    .policy = static_cast<Policy>(nativePolicy),
-    .priority = schedParam.sched_priority,
+    .policy = static_cast<Policy>(native_policy),
+    .priority = sched_param.sched_priority,
   };
 }
 #endif
@@ -751,20 +751,21 @@ constexpr std::variant<
 > Strand::scheduling<Strand::Stage::NOT_LAUNCHED>(
     const Scheduling& scheduling
 ) {
-  const auto schedParam = sched_param{ .sched_priority = scheduling.priority, };
-  const auto policySetResult = pthread_attr_setschedpolicy(
+  const auto sched_param =
+      ::sched_param{ .sched_priority = scheduling.priority, };
+  const auto policy_set_result = ::pthread_attr_setschedpolicy(
       &this->attr_,
       static_cast<int>(scheduling.policy)
   );
-  if (policySetResult != 0) {
-    return static_cast<SetPolicyError>(policySetResult);
+  if (policy_set_result != 0) {
+    return static_cast<SetPolicyError>(policy_set_result);
   }
-  const auto prioritySetResult = pthread_attr_setschedparam(
+  const auto priority_set_result = ::pthread_attr_setschedparam(
       &this->attr_,
-      &schedParam
+      &sched_param
   );
-  if (prioritySetResult != 0) {
-    return static_cast<SetPriorityError>(prioritySetResult);
+  if (priority_set_result != 0) {
+    return static_cast<SetPriorityError>(priority_set_result);
   }
   return std::monostate{};
 }
@@ -775,11 +776,12 @@ constexpr std::variant<
     typename Strand::SetPolicyError,
     typename Strand::SetPriorityError
 > Strand::scheduling<Strand::Stage::LAUNCHED>(const Scheduling& scheduling) {
-  const auto schedParam = sched_param{ .sched_priority = scheduling.priority, };
-  const auto res = pthread_setschedparam(
+  const auto sched_param =
+      ::sched_param{ .sched_priority = scheduling.priority, };
+  const auto res = ::pthread_setschedparam(
       this->thread_,
       static_cast<int>(scheduling.policy),
-      &schedParam
+      &sched_param
   );
   if (res != 0) {
     return static_cast<SetPolicyError>(res);
@@ -791,20 +793,57 @@ constexpr std::variant<
 #if __has_include(<pthread.h>)
 template <>
 constexpr std::variant<
+    bool,
+    typename Strand::GetDetachedError
+> Strand::detached<Strand::Stage::NOT_LAUNCHED>() const {
+  int detached;
+  const auto detach_state_get_result = ::pthread_attr_getdetachstate(
+      &this->attr_,
+      &detached
+  );
+  if (detach_state_get_result != 0) {
+    return static_cast<GetDetachedError>(detach_state_get_result);
+  }
+  return detached == PTHREAD_CREATE_DETACHED;
+}
+#endif
+
+#if __has_include(<pthread.h>)
+template <>
+constexpr std::variant<
+    std::monostate,
+    typename Strand::SetDetachedError
+> Strand::detached<Strand::Stage::NOT_LAUNCHED>(
+    const bool detached
+) {
+  const auto detach_state_set_result = ::pthread_attr_setdetachstate(
+      &this->attr_,
+      detached ? PTHREAD_CREATE_DETACHED : PTHREAD_CREATE_JOINABLE
+  );
+  if (detach_state_set_result != 0) {
+    return static_cast<SetDetachedError>(detach_state_set_result);
+  }
+  return std::monostate{};
+}
+#endif
+
+#if __has_include(<pthread.h>)
+template <>
+constexpr std::variant<
     std::size_t,
     typename Strand::GetStackSizeError
-> Strand::stackSize<Strand::Stage::NOT_LAUNCHED>() const {
-  void* stackAddress;
-  std::size_t stackSize;
-  const auto& getStackResult = pthread_attr_getstack(
+> Strand::stack_size<Strand::Stage::NOT_LAUNCHED>() const {
+  void* stack_address;
+  std::size_t stack_size;
+  const auto& get_stack_result = ::pthread_attr_getstack(
       &this->attr_,
-      &stackAddress,
-      &stackSize
+      &stack_address,
+      &stack_size
   );
-  if (getStackResult != 0) {
-    return static_cast<GetStackSizeError>(getStackResult);
+  if (get_stack_result != 0) {
+    return static_cast<GetStackSizeError>(get_stack_result);
   }
-  return stackSize;
+  return stack_size;
 }
 #endif
 
@@ -815,24 +854,24 @@ std::variant<
     std::monostate,
     typename Strand::SetStackSizeError,
     typename Strand::ResourceError
-> Strand::allocateStack<Strand::Stage::NOT_LAUNCHED>(
-    const std::size_t stackSize
+> Strand::allocate_stack<Strand::Stage::NOT_LAUNCHED>(
+    const std::size_t stack_size
 ) {
-  const auto allocateResult = posix_memalign(
+  const auto allocate_result = ::posix_memalign(
       &this->stack_,
       sysconf(_SC_PAGE_SIZE),
-      stackSize
+      stack_size
   );
-  if (allocateResult != 0) {
-    return static_cast<ResourceError>(allocateResult);
+  if (allocate_result != 0) {
+    return static_cast<ResourceError>(allocate_result);
   }
-  const auto setStackResult = pthread_attr_setstack(
+  const auto set_stack_result = ::pthread_attr_setstack(
       &this->attr_,
       this->stack_,
-      stackSize
+      stack_size
   );
-  if (setStackResult != 0) {
-    return static_cast<SetStackSizeError>(setStackResult);
+  if (set_stack_result != 0) {
+    return static_cast<SetStackSizeError>(set_stack_result);
   }
   return std::monostate{};
 }
@@ -844,8 +883,8 @@ std::variant<
 template <>
 std::variant<
     std::monostate
-> Strand::deallocateStack<Strand::Stage::TERMINATED>() {
-  free(this->stack_);
+> Strand::deallocate_stack<Strand::Stage::TERMINATED>() {
+  ::free(this->stack_);
   return std::monostate{};
 }
 #endif
@@ -863,18 +902,18 @@ std::variant<std::monostate>
 #endif
 Strand::run() {
 #if __has_include(<pthread.h>)
-  const auto errorCode = pthread_create(
+  const auto error_code = ::pthread_create(
       &this->thread_,
       &this->attr_,
       &Strand::task,
       this
   );
-  if (errorCode != 0) {
-    return static_cast<RunError>(errorCode);
+  if (error_code != 0) {
+    return static_cast<RunError>(error_code);
   }
-  const auto attrDestroyResult = pthread_attr_destroy(&this->attr_);
-  if (attrDestroyResult != 0) {
-    return static_cast<ResourceError>(attrDestroyResult);
+  const auto attr_destroy_result = ::pthread_attr_destroy(&this->attr_);
+  if (attr_destroy_result != 0) {
+    return static_cast<ResourceError>(attr_destroy_result);
   }
 #else
   this->thread_ = std::thread(this->task_);
@@ -890,52 +929,15 @@ std::variant<std::monostate>
 Strand::join() {
 #if __has_include(<pthread.h>)
   void* res;
-  const auto errorCode = pthread_join(this->thread_, &res);
-  if (errorCode != 0) {
-    return static_cast<JoinError>(errorCode);
+  const auto error_code = ::pthread_join(this->thread_, &res);
+  if (error_code != 0) {
+    return static_cast<JoinError>(error_code);
   }
 #else
   this->thread_.join();
 #endif
   return std::monostate{};
 }
-
-#if __has_include(<pthread.h>)
-template <>
-constexpr std::variant<
-    bool,
-    typename Strand::GetDetachedError
-> Strand::detached<Strand::Stage::NOT_LAUNCHED>() const {
-  int detached;
-  const auto detachStateGetResult = pthread_attr_getdetachstate(
-      &this->attr_,
-      &detached
-  );
-  if (detachStateGetResult != 0) {
-    return static_cast<GetDetachedError>(detachStateGetResult);
-  }
-  return detached == PTHREAD_CREATE_DETACHED;
-}
-#endif
-
-#if __has_include(<pthread.h>)
-template <>
-constexpr std::variant<
-    std::monostate,
-    typename Strand::SetDetachedError
-> Strand::detached<Strand::Stage::NOT_LAUNCHED>(
-    const bool detached
-) {
-  const auto detachStateSetResult = pthread_attr_setdetachstate(
-      &this->attr_,
-      detached ? PTHREAD_CREATE_DETACHED : PTHREAD_CREATE_JOINABLE
-  );
-  if (detachStateSetResult != 0) {
-    return static_cast<SetDetachedError>(detachStateSetResult);
-  }
-  return std::monostate{};
-}
-#endif
 
 #if __has_include(<pthread.h>)
 constexpr std::variant<
@@ -947,9 +949,9 @@ std::variant<std::monostate>
 #endif
 Strand::detach() {
 #if __has_include(<pthread.h>)
-  const auto detachResult = pthread_detach(this->thread_);
-  if (detachResult != 0) {
-    return static_cast<DetachError>(detachResult);
+  const auto detach_result = ::pthread_detach(this->thread_);
+  if (detach_result != 0) {
+    return static_cast<DetachError>(detach_result);
   }
 #else
   thread.detach();

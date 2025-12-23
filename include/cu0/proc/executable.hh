@@ -40,7 +40,7 @@ namespace util {
  *     the first found executable is returned
  */
 [[nodiscard]]
-Executable findBy(const std::string& name);
+Executable find_by(const std::string& name);
 
 /*!
  * @brief finds an executable by a name
@@ -49,7 +49,7 @@ Executable findBy(const std::string& name);
  * @return executable with empty arguments and an empty environment
  */
 [[nodiscard]]
-Executable findBy(
+Executable find_by(
     const std::string& name,
     const std::filesystem::path& directory
 );
@@ -60,7 +60,7 @@ Executable findBy(
  * @return tuple containing a ptr to an array and the size of that array
  */
 [[nodiscard]]
-std::tuple<std::unique_ptr<std::unique_ptr<char[]>[]>, std::size_t> argvOf(
+std::tuple<std::unique_ptr<std::unique_ptr<char[]>[]>, std::size_t> argv_of(
     const Executable& executable
 );
 
@@ -71,7 +71,7 @@ std::tuple<std::unique_ptr<std::unique_ptr<char[]>[]>, std::size_t> argvOf(
  * @return tuple containing a ptr to an array and the size of that array
  */
 [[nodiscard]]
-std::tuple<std::unique_ptr<std::unique_ptr<char[]>[]>, std::size_t> envpOf(
+std::tuple<std::unique_ptr<std::unique_ptr<char[]>[]>, std::size_t> envp_of(
     const Executable& executable
 );
 
@@ -83,30 +83,32 @@ namespace cu0 {
 
 namespace util {
 
-inline Executable findBy(const std::string& name) {
-  auto candidate = findBy(name, std::filesystem::current_path());
+inline Executable find_by(const std::string& name) {
+  auto candidate = find_by(name, std::filesystem::current_path());
   if (!candidate.binary.empty()) {
     return candidate;
   }
-  const auto environmentVariable = EnvironmentVariable::synced("PATH");
-  const auto& optional = environmentVariable.cached();
+  const auto environment_variable = EnvironmentVariable::synced("PATH");
+  const auto& optional = environment_variable.cached();
   if (!optional.has_value()) {
     return {};
   }
-  auto pathsLeft = optional.value();
-  if (pathsLeft.empty()) {
+  auto paths_left = optional.value();
+  if (paths_left.empty()) {
     return {};
   }
   while (true) {
-#ifndef not_an_x
-    const auto pos = pathsLeft.find(':');
+    const auto pos = paths_left.find(
+#if !defined(NOT_AN_X)
+        ':'
 #else
-    const auto pos = pathsLeft.find(';');
+        ';'
 #endif
-    const auto path = pathsLeft.substr(0, pos);
+    );
+    const auto path = paths_left.substr(0, pos);
     if (
         std::filesystem::is_directory(path) &&
-        !(candidate = findBy(name, path)).binary.empty()
+        !(candidate = find_by(name, path)).binary.empty()
     ) {
       return candidate;
     }
@@ -114,12 +116,12 @@ inline Executable findBy(const std::string& name) {
       break;
     }
     /// else
-    pathsLeft.erase(0, pos + 1);
+    paths_left.erase(0, pos + 1);
   }
   return {};
 }
 
-inline Executable findBy(
+inline Executable find_by(
     const std::string& name,
     const std::filesystem::path& directory
 ) {
@@ -132,7 +134,7 @@ inline Executable findBy(
 }
 
 inline std::tuple<std::unique_ptr<std::unique_ptr<char[]>[]>, std::size_t>
-argvOf(
+argv_of(
     const Executable& executable
 ) {
   //! argv == executable.binary + executable.arguments + NULL
@@ -155,7 +157,7 @@ argvOf(
 }
 
 inline std::tuple<std::unique_ptr<std::unique_ptr<char[]>[]>, std::size_t>
-envpOf(
+envp_of(
     const Executable& executable
 ) {
   //! envp == formatted(executable.environment) + NULL

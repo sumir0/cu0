@@ -6,7 +6,7 @@ template <class Result, class Error>
 constexpr std::variant<Result, Error> mock(
     [[maybe_unused]] const Result& result,
     const Error& error,
-    [[maybe_unused]] const bool& errorFlag
+    [[maybe_unused]] const bool& error_flag
 ) {
   return std::variant<Result, Error>{error};
 }

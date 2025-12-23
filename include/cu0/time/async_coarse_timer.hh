@@ -38,7 +38,7 @@ protected:
   std::chrono::time_point<
       std::chrono::steady_clock,
       std::chrono::duration<Rep, Period>
-  > launchTime_;
+  > launch_time_;
 private:
 };
 
@@ -53,7 +53,7 @@ constexpr AsyncCoarseTimer<Rep, Period>::AsyncCoarseTimer(
 
 template <class Rep, class Period>
 constexpr void AsyncCoarseTimer<Rep, Period>::launch() {
-  this->launchTime_ = std::chrono::time_point_cast<
+  this->launch_time_ = std::chrono::time_point_cast<
       std::chrono::duration<Rep, Period>
   >(std::chrono::steady_clock::now());
 }
@@ -61,7 +61,7 @@ constexpr void AsyncCoarseTimer<Rep, Period>::launch() {
 template <class Rep, class Period>
 constexpr void AsyncCoarseTimer<Rep, Period>::wait() const {
   std::this_thread::sleep_until(
-      this->launchTime_ + BlockCoarseTimer<Rep, Period>::duration_
+      this->launch_time_ + BlockCoarseTimer<Rep, Period>::duration_
   );
 }
 

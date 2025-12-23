@@ -8,73 +8,75 @@ int main() {
   constexpr auto ANOTHER_TEST_VALUE2 = "another_test_value2";
   constexpr auto TEST_VALUE_NEXT = "test_value_next";
 
-  auto uniqueTestKey = std::string{TEST_KEY};
+  auto unique_test_key = std::string{TEST_KEY};
   auto it = 0;
 
-  while (std::getenv(uniqueTestKey.c_str()) != NULL) {
-    uniqueTestKey = std::string{TEST_KEY} + '_' + std::to_string(++it);
+  while (std::getenv(unique_test_key.c_str()) != NULL) {
+    unique_test_key = std::string{TEST_KEY} + '_' + std::to_string(++it);
   }
-  setenv(uniqueTestKey.c_str(), TEST_VALUE, false);
+  setenv(unique_test_key.c_str(), TEST_VALUE, false);
 
-  auto environmentVariable = cu0::EnvironmentVariable::unsynced(uniqueTestKey);
-  assert(environmentVariable.key() == uniqueTestKey);
-  assert(!environmentVariable.cached().has_value());
+  auto environment_variable =
+      cu0::EnvironmentVariable::unsynced(unique_test_key);
+  assert(environment_variable.key() == unique_test_key);
+  assert(!environment_variable.cached().has_value());
   {
-    const auto synced = environmentVariable.sync();
+    const auto synced = environment_variable.sync();
     assert(synced.has_value());
     assert(synced.value() == TEST_VALUE);
   }
-  assert(environmentVariable.key() == uniqueTestKey);
-  assert(environmentVariable.cached().has_value());
-  assert(environmentVariable.cached().value() == TEST_VALUE);
+  assert(environment_variable.key() == unique_test_key);
+  assert(environment_variable.cached().has_value());
+  assert(environment_variable.cached().value() == TEST_VALUE);
 
-  auto anotherUniqueTestKey = uniqueTestKey;
+  auto another_unique_test_key = unique_test_key;
   do {
-    anotherUniqueTestKey = std::string{TEST_KEY} + '_' + std::to_string(++it);
-  } while (std::getenv(anotherUniqueTestKey.c_str()) != NULL);
-  setenv(anotherUniqueTestKey.c_str(), ANOTHER_TEST_VALUE, false);
+    another_unique_test_key =
+        std::string{TEST_KEY} + '_' + std::to_string(++it);
+  } while (std::getenv(another_unique_test_key.c_str()) != NULL);
+  setenv(another_unique_test_key.c_str(), ANOTHER_TEST_VALUE, false);
 
-  auto anotherEnvironmentVariable =
-      cu0::EnvironmentVariable::synced(anotherUniqueTestKey);
-  assert(anotherEnvironmentVariable.key() == anotherUniqueTestKey);
-  assert(anotherEnvironmentVariable.cached().has_value());
-  assert(anotherEnvironmentVariable.cached().value() == ANOTHER_TEST_VALUE);
+  auto another_environment_variable =
+      cu0::EnvironmentVariable::synced(another_unique_test_key);
+  assert(another_environment_variable.key() == another_unique_test_key);
+  assert(another_environment_variable.cached().has_value());
+  assert(another_environment_variable.cached().value() == ANOTHER_TEST_VALUE);
 
-  setenv(anotherUniqueTestKey.c_str(), ANOTHER_TEST_VALUE2, true);
+  setenv(another_unique_test_key.c_str(), ANOTHER_TEST_VALUE2, true);
 
-  assert(anotherEnvironmentVariable.key() == anotherUniqueTestKey);
-  assert(anotherEnvironmentVariable.cached().has_value());
-  assert(anotherEnvironmentVariable.cached().value() == ANOTHER_TEST_VALUE);
-  assert(anotherEnvironmentVariable.sync().has_value());
-  assert(anotherEnvironmentVariable.sync().value() == ANOTHER_TEST_VALUE2);
-  assert(anotherEnvironmentVariable.key() == anotherUniqueTestKey);
-  assert(anotherEnvironmentVariable.cached().has_value());
-  assert(anotherEnvironmentVariable.cached().value() == ANOTHER_TEST_VALUE2);
+  assert(another_environment_variable.key() == another_unique_test_key);
+  assert(another_environment_variable.cached().has_value());
+  assert(another_environment_variable.cached().value() == ANOTHER_TEST_VALUE);
+  assert(another_environment_variable.sync().has_value());
+  assert(another_environment_variable.sync().value() == ANOTHER_TEST_VALUE2);
+  assert(another_environment_variable.key() == another_unique_test_key);
+  assert(another_environment_variable.cached().has_value());
+  assert(another_environment_variable.cached().value() == ANOTHER_TEST_VALUE2);
 
-  assert(environmentVariable.key() == uniqueTestKey);
-  assert(environmentVariable.cached().has_value());
-  assert(environmentVariable.cached().value() == TEST_VALUE);
-  assert(environmentVariable.sync().has_value());
-  assert(environmentVariable.sync().value() == TEST_VALUE);
+  assert(environment_variable.key() == unique_test_key);
+  assert(environment_variable.cached().has_value());
+  assert(environment_variable.cached().value() == TEST_VALUE);
+  assert(environment_variable.sync().has_value());
+  assert(environment_variable.sync().value() == TEST_VALUE);
 
-#ifndef not_an_x
-  const auto setVariant = environmentVariable.set(TEST_VALUE_NEXT);
-  assert(std::holds_alternative<std::monostate>(setVariant));
-  assert(environmentVariable.key() == uniqueTestKey);
-  assert(environmentVariable.cached().has_value());
-  assert(environmentVariable.cached().value() == TEST_VALUE_NEXT);
-  assert(environmentVariable.sync().has_value());
-  assert(environmentVariable.sync().value() == TEST_VALUE_NEXT);
+#if !defined(NOT_AN_X)
+  const auto set_variant = environment_variable.set(TEST_VALUE_NEXT);
+  assert(std::holds_alternative<std::monostate>(set_variant));
+  assert(environment_variable.key() == unique_test_key);
+  assert(environment_variable.cached().has_value());
+  assert(environment_variable.cached().value() == TEST_VALUE_NEXT);
+  assert(environment_variable.sync().has_value());
+  assert(environment_variable.sync().value() == TEST_VALUE_NEXT);
 
-  const auto unsetVariant = environmentVariable.unset();
-  assert(std::holds_alternative<std::monostate>(unsetVariant));
-  assert(environmentVariable.key() == uniqueTestKey);
-  assert(!environmentVariable.cached().has_value());
-  assert(!environmentVariable.sync().has_value());
+  const auto unset_variant = environment_variable.unset();
+  assert(std::holds_alternative<std::monostate>(unset_variant));
+  assert(environment_variable.key() == unique_test_key);
+  assert(!environment_variable.cached().has_value());
+  assert(!environment_variable.sync().has_value());
 #endif
 
-  unsetenv(uniqueTestKey.c_str());
-  unsetenv(anotherUniqueTestKey.c_str());
+  unsetenv(unique_test_key.c_str());
+  unsetenv(another_unique_test_key.c_str());
 
   return 0;
 }

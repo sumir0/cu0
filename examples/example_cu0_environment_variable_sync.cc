@@ -3,10 +3,10 @@
 
 int main() {
   //! @note environment variable may not be set
-  auto environmentVariable = cu0::EnvironmentVariable::unsynced("KEY");
+  auto environment_variable = cu0::EnvironmentVariable::unsynced("KEY");
   //! @note wait for external environment variable change and
   //!     sync value of the environment variable with the key 'KEY'
-  const auto& synced = environmentVariable.sync();
+  const auto& synced = environment_variable.sync();
   std::cout << "Synced value of the environment variable 'KEY': " <<
       (synced.has_value() ? synced.value() : "<not-set>") << '\n';
 }

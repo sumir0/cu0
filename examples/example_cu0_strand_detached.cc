@@ -20,15 +20,15 @@ int main() {
     return 1;
   }
   auto& strand = std::get<cu0::Strand>(variant);
-  const auto setDetachedVariant =
+  const auto set_detached_variant =
       strand.detached<cu0::Strand::Stage::NOT_LAUNCHED>(true);
-  if (!std::holds_alternative<std::monostate>(setDetachedVariant)) {
+  if (!std::holds_alternative<std::monostate>(set_detached_variant)) {
     std::cout <<
         "Error: the detached state of the strand couldn't be modified" << '\n';
     return 2;
   }
-  const auto runResult = strand.run();
-  if (!std::holds_alternative<std::monostate>(runResult)) {
+  const auto run_result = strand.run();
+  if (!std::holds_alternative<std::monostate>(run_result)) {
     std::cout << "Error: the strand couldn't be launched" << '\n';
     return 3;
   }

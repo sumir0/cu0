@@ -14,7 +14,7 @@ cu0 is a header-only common utilities library for software engineering.
 			cu0::EnvironmentVariableData
 			cu0::EnvironmentVariable
 		Platform
-			not_an_x
+                        NOT_AN_X
 		Process
 			cu0::Executable
 			cu0::Process
@@ -241,7 +241,7 @@ values
 ---
 
 ```c++
-#ifndef not_an_x
+#if !defined(NOT_AN_X)
 public:
 enum class cu0::EnvironmentVariable::SetError;
 #endif
@@ -252,7 +252,7 @@ enum of possible errors during value setting
 ---
 
 ```c++
-#ifndef not_an_x
+#if !defined(NOT_AN_X)
 cu0::EnvironmentVariable::SetError::INVALID
 #endif
 ```
@@ -262,7 +262,7 @@ data_.key is a string of length 0, or contains an '=' character
 ---
 
 ```c++
-#ifndef not_an_x
+#if !defined(NOT_AN_X)
 cu0::EnvironmentVariable::SetError::MEMORY
 #endif
 ```
@@ -404,7 +404,7 @@ new cached value as a const reference
 ---
 
 ```c++
-#ifndef not_an_x
+#if !defined(NOT_AN_X)
 public:
 std::variant<
     std::monostate, 
@@ -430,7 +430,7 @@ else => error code
 ---
 
 ```c++
-#ifndef not_an_x
+#if !defined(NOT_AN_X)
 public:
 std::variant<
     std::monostate, 
@@ -452,11 +452,11 @@ else => error code
 ---
 
 ```c++
-#ifndef not_an_x
+#if !defined(NOT_AN_X)
 protected:
 template <class ConvertTo>
 static constexpr ConvertTo cu0::EnvironmentVariable::convert(
-    const int& errorNumber
+    const int& error_number
 );
 #endif
 ```
@@ -471,7 +471,7 @@ ConvertTo is a struct conversion to which is needed
 
 _Parameters_
 
-errorNumber is the error number (error code)
+error_number is the error number (error code)
 
 _Returns_
 
@@ -503,22 +503,22 @@ key-value data of the associated environment variable
 
 ---
 
-#### `not_an_x`
+#### `NOT_AN_X`
 
 ---
 
-not_an_x is defined if this platform was detected as not an x platform
+NOT_AN_X is defined if this platform was detected as not an x platform
 
 > **_EXAMPLE:_** linux
 
 > **_EXAMPLE:_** unix
 
 ```c++
-#ifndef __unix__
-#ifdef not_an_x
-#warning not_an_x has been aready defined somewhere else => not redefining it
+#if !defined(__unix__)
+#if defined(NOT_AN_X)
+#warning NOT_AN_X has been aready defined somewhere else => not redefining it
 #else
-#define not_an_x
+#define NOT_AN_X
 #endif
 #endif
 ```
@@ -572,7 +572,7 @@ environment in the form <key, value>
 
 ```c++
 [[nodiscard]]
-cu0::Executable cu0::findBy(const std::string& name);
+cu0::Executable cu0::find_by(const std::string& name);
 ```
 
 finds an executable by a name
@@ -598,7 +598,7 @@ the first found executable is returned
 
 ```c++
 [[nodiscard]]
-cu0::Executable cu0::findBy(
+cu0::Executable cu0::find_by(
     const std::string& name,
     const std::filesystem::path& directory
 );
@@ -620,9 +620,8 @@ executable with empty arguments and an empty environment
 
 ```c++
 [[nodiscard]]
-std::tuple<std::unique_ptr<std::unique_ptr<char[]>[]>, std::size_t> cu0::argvOf(
-    const cu0::Executable& executable
-);
+std::tuple<std::unique_ptr<std::unique_ptr<char[]>[]>, std::size_t> 
+cu0::argv_of(const cu0::Executable& executable);
 ```
 
 converts arguments of an executable to `ptr<ptr<char[]>[]>`
@@ -641,9 +640,8 @@ tuple containing a ptr to an array and the size of that array
 
 ```c++
 [[nodiscard]]
-std::tuple<std::unique_ptr<std::unique_ptr<char[]>[]>, std::size_t> cu0::argvOf(
-    const cu0::Executable& executable
-);
+std::tuple<std::unique_ptr<std::unique_ptr<char[]>[]>, std::size_t> 
+cu0::envp_of(const cu0::Executable& executable);
 ```
 
 converts environment of an executable to `ptr<ptr<char[]>[]>`
@@ -672,7 +670,7 @@ enum struct cu0::Process::CreateError;
 ```
 
 enum of possible errors for `cu0::Process::create()` and 
-`cu0::Process::createPipeless()` functions
+`cu0::Process::create_pipeless()` functions
 
 ---
 
@@ -718,7 +716,7 @@ enum struct cu0::Process::WaitError;
 #endif
 ```
 
-enum of possible errors for `cu0::Process::waitCautious()` function
+enum of possible errors for `cu0::Process::wait_cautious()` function
 
 ```c++
 cu0::Process::WaitError::CHILD = ECHILD,
@@ -748,7 +746,7 @@ enum struct cu0::Process::WriteError;
 #endif
 ```
 
-enum of possible errors for `cu0::Process::stdinCautious()` function
+enum of possible errors for `cu0::Process::stdin_cautious()` function
 
 ```c++
 cu0::Process::WriteError::AGAIN = EAGAIN,
@@ -850,8 +848,8 @@ enum struct cu0::Process::ReadError;
 #endif
 ```
 
-enum of possible errors for `cu0::Process::stdoutCautious()` and 
-`cu0::Process::stderrCautious()` functions
+enum of possible errors for `cu0::Process::stdout_cautious()` and 
+`cu0::Process::stderr_cautious()` functions
 
 ---
 
@@ -969,7 +967,7 @@ enum struct cu0::Process::SignalError;
 #endif
 ```
 
-enum of possible errors for `cu0::Process::signalCautious()` function
+enum of possible errors for `cu0::Process::signal_cautious()` function
 
 ---
 
@@ -1006,8 +1004,8 @@ constructs an instance using the current process in which this function is
 called
 
 > **_NOTE:_** for the returned current process cu0::Process::stdin(), 
-cu0::Process::stdout(), cu0::Process::stderr() member functions are not 
-supported yet
+cu0::Process::stdout(), cu0::Process::stderr() and their corresponding cautious 
+member functions are not supported yet
 
 >> **_SEE:_** implementation details of cu0::Process::current()
 
@@ -1045,7 +1043,7 @@ else => error code
 public:
 [[nodiscard]]
 static std::variant<cu0::Process, cu0::Process::CreateError>
-cu0::Process::createPipeless(const cu0::Executable& executable);
+cu0::Process::create_pipeless(const cu0::Executable& executable);
 #endif
 ```
 
@@ -1135,7 +1133,7 @@ process identifier as a const reference
 ```c++
 public:
 [[nodiscard]]
-constexpr std::optional<int> cu0::Process::stdinPipe() const;
+constexpr std::optional<int> cu0::Process::stdin_pipe() const;
 ```
 
 accesses stdin pipe file descriptor
@@ -1151,7 +1149,7 @@ else => empty optional
 ```c++
 public:
 [[nodiscard]]
-constexpr std::optional<int> cu0::Process::stdoutPipe() const;
+constexpr std::optional<int> cu0::Process::stdout_pipe() const;
 ```
 
 accesses stdout pipe file descriptor
@@ -1167,7 +1165,7 @@ else => empty optional
 ```c++
 public:
 [[nodiscard]]
-constexpr std::optional<int> cu0::Process::stderrPipe() const;
+constexpr std::optional<int> cu0::Process::stderr_pipe() const;
 ```
 
 accesses stderr pipe file descriptor
@@ -1196,11 +1194,11 @@ waits for the process to exit or to be terminated or to be stopped
 public:
 [[nodiscard]]
 std::variant<std::monostate, cu0::Process::WaitError>
-cu0::Process::waitCautious();
+cu0::Process::wait_cautious();
 #endif
 ```
 
-waitCautious waits for the process to exit or to be terminated or to be stopped
+waits for the process to exit or to be terminated or to be stopped
 
 _Returns_
 
@@ -1214,7 +1212,7 @@ else => error code
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
 public:
 [[nodiscard]]
-constexpr const std::optional<int>& cu0::Process::exitCode() const;
+constexpr const std::optional<int>& cu0::Process::exit_code() const;
 #endif
 ```
 
@@ -1235,7 +1233,7 @@ exit status code as a const reference
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
 public:
 [[nodiscard]]
-constexpr const std::optional<int>& cu0::Process::terminationCode() const;
+constexpr const std::optional<int>& cu0::Process::termination_code() const;
 #endif
 ```
 
@@ -1256,7 +1254,7 @@ termination signal code as a const reference
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
 public:
 [[nodiscard]]
-constexpr const std::optional<int>& cu0::Process::stopCode() const;
+constexpr const std::optional<int>& cu0::Process::stop_code() const;
 #endif
 ```
 
@@ -1294,7 +1292,7 @@ public:
 std::tuple<
     std::variant<std::monostate, cu0::Process::WriteError>, 
     std::size_t
-> cu0::Process::stdinCautious(const std::string& input) const;
+> cu0::Process::stdin_cautious(const std::string& input) const;
 #endif
 ```
 
@@ -1306,9 +1304,9 @@ input is the input value
 
 _Returns_
 
-result of cu0::Process::writeInto()
+result of cu0::Process::write_into()
 
-> **_SEE:_** cu0::Process::writeInto()
+> **_SEE:_** cu0::Process::write_into()
 
 ---
 
@@ -1335,7 +1333,7 @@ public:
 std::tuple<
     std::variant<std::monostate, cu0::Process::ReadError>, 
     std::string
-> cu0::Process::stdoutCautious() const;
+> cu0::Process::stdout_cautious() const;
 #endif
 ```
 
@@ -1343,9 +1341,9 @@ returns the value of the stdout
 
 _Returns_
 
-result of cu0::Process::readFrom()
+result of cu0::Process::read_from()
 
-> **_SEE:_** cu0::Process::readFrom()
+> **_SEE:_** cu0::Process::read_from()
 
 ---
 
@@ -1372,7 +1370,7 @@ public:
 std::tuple<
     std::variant<std::monostate, cu0::Process::ReadError>, 
     std::string
-> cu0::Process::stderrCautious() const;
+> cu0::Process::stderr_cautious() const;
 #endif
 ```
 
@@ -1380,9 +1378,9 @@ returns the value of the stderr
 
 _Returns_
 
-result of cu0::Process::readFrom()
+result of cu0::Process::read_from()
 
-> **_SEE:_** cu0::Process::readFrom()
+> **_SEE:_** cu0::Process::read_from()
 
 ---
 
@@ -1406,7 +1404,7 @@ code is the signal to be sent
 public:
 [[nodiscard]]
 std::variant<std::monostate, cu0::Process::SignalError>
-cu0::Process::signalCautious(const int& code) const;
+cu0::Process::signal_cautious(const int& code) const;
 #endif
 ```
 
@@ -1428,7 +1426,7 @@ else => error code
 #if __has_include(<unistd.h>)
 protected:
 template <std::size_t BUFFER_SIZE, class Return>
-static Return cu0::Process::writeInto(
+static Return cu0::Process::write_into(
     const int& pipe,
     const std::string& input
 );
@@ -1476,7 +1474,7 @@ if Return == void => nothing
 protected:
 template <std::size_t BUFFER_SIZE, class Return>
 [[nodiscard]]
-static Return cu0::Process::readFrom(const int& pipe);
+static Return cu0::Process::read_from(const int& pipe);
 #endif
 ```
 
@@ -1517,7 +1515,7 @@ if Return == std::string => data that have been read as std::string
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
 protected:
 template <class Return>
-Return cu0::Process::waitExitLoop();
+Return cu0::Process::wait_exit_loop();
 #endif
 ```
 
@@ -1576,7 +1574,7 @@ process identifier
 
 ```c++
 protected:
-int cu0::Process::stdinPipe_ = -1;
+int cu0::Process::stdin_pipe_ = -1;
 ```
 
 stdin file descriptor
@@ -1585,7 +1583,7 @@ stdin file descriptor
 
 ```c++
 protected:
-int cu0::Process::stdoutPipe_ = -1;
+int cu0::Process::stdout_pipe_ = -1;
 ```
 
 stdout file descriptor
@@ -1594,7 +1592,7 @@ stdout file descriptor
 
 ```c++
 protected:
-int cu0::Process::stderrPipe_ = -1;
+int cu0::Process::stderr_pipe_ = -1;
 ```
 
 stderr file descriptor
@@ -1604,7 +1602,7 @@ stderr file descriptor
 ```c++
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
 protected:
-std::optional<int> cu0::Process::exitCode_ = {};
+std::optional<int> cu0::Process::exit_code_ = {};
 #endif
 ```
 
@@ -1619,7 +1617,7 @@ else => empty exit status code value
 ```c++
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
 protected:
-std::optional<int> cu0::Process::terminationCode_ = {};
+std::optional<int> cu0::Process::termination_code_ = {};
 #endif
 ```
 
@@ -1634,7 +1632,7 @@ else => empty termination signal code value
 ```c++
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
 protected:
-std::optional<int> cu0::Process::stopCode_ = {};
+std::optional<int> cu0::Process::stop_code_ = {};
 #endif
 ```
 
@@ -1685,7 +1683,7 @@ cu0::Strand::Policy::PTHREAD_RR = SCHED_RR,
 ```c++
 #if __has_include(<pthread.h>)
 public:
-using cu0::Strand::priority_type = std::remove_reference_t<
+using cu0::Strand::PriorityType = std::remove_reference_t<
     decltype(std::declval<sched_param>().sched_priority)
 >;
 #endif
@@ -1714,7 +1712,7 @@ policy
 
 ```c++
 public:
-cu0::Strand::priority_type cu0::Strand::Scheduling::priority{};
+cu0::Strand::PriorityType cu0::Strand::Scheduling::priority{};
 ```
 > **_NOTE:_** policy-specific
 when it is modified use
@@ -2034,7 +2032,7 @@ public:
 template <cu0::Strand::Stage stage>
 [[nodiscard]]
 constexpr std::variant<
-    cu0::Strand::priority_type,
+    cu0::Strand::PriorityType,
     cu0::Strand::GetPriorityError
 > cu0::Strand::priority() const = delete;
 #endif
@@ -2059,7 +2057,7 @@ public:
 template <>
 [[nodiscard]]
 constexpr std::variant<
-    cu0::Strand::priority_type,
+    cu0::Strand::PriorityType,
     cu0::Strand::GetPriorityError
 > cu0::Strand::priority<cu0::Strand::Stage::NOT_LAUNCHED>() const;
 #endif
@@ -2081,7 +2079,7 @@ public:
 template <>
 [[nodiscard]]
 constexpr std::variant<
-    cu0::Strand::priority_type,
+    cu0::Strand::PriorityType,
     cu0::Strand::GetPriorityError
 > cu0::Strand::priority<cu0::Strand::Stage::LAUNCHED>() const;
 #endif
@@ -2105,7 +2103,7 @@ constexpr std::variant<
     std::monostate,
     cu0::Strand::SetPriorityError
 > cu0::Strand::priority(
-    const cu0::Strand::priority_type& priority
+    const cu0::Strand::PriorityType& priority
 ) = delete;
 #endif
 ```
@@ -2135,7 +2133,7 @@ constexpr std::variant<
     std::monostate,
     cu0::Strand::SetPriorityError
 > cu0::Strand::priority<cu0::Strand::Stage::NOT_LAUNCHED>(
-    const cu0::Strand::priority_type& priority
+    const cu0::Strand::PriorityType& priority
 );
 #endif
 ```
@@ -2162,7 +2160,7 @@ constexpr std::variant<
     std::monostate,
     cu0::Strand::SetPriorityError
 > cu0::Strand::priority<cu0::Strand::Stage::LAUNCHED>(
-    const cu0::Strand::priority_type& priority
+    const cu0::Strand::PriorityType& priority
 );
 #endif
 ```
@@ -2455,7 +2453,7 @@ template <cu0::Strand::Stage stage>
 constexpr std::variant<
     std::size_t,
     cu0::Strand::GetStackSizeError
-> cu0::Strand::stackSize() const = delete;
+> cu0::Strand::stack_size() const = delete;
 #endif
 ```
 
@@ -2479,7 +2477,7 @@ template <>
 constexpr std::variant<
     std::size_t,
     cu0::Strand::GetStackSizeError
-> stackSize<cu0::Strand::Stage::NOT_LAUNCHED>() const;
+> stack_size<cu0::Strand::Stage::NOT_LAUNCHED>() const;
 #endif
 ```
 
@@ -2500,7 +2498,7 @@ constexpr std::variant<
     std::monostate,
     cu0::Strand::SetStackSizeError,
     cu0::Strand::ResourceError
-> cu0::Strand::allocateStack(const std::size_t stackSize) = delete;
+> cu0::Strand::allocate_stack(const std::size_t stack_size) = delete;
 #endif
 ```
 
@@ -2511,7 +2509,7 @@ specializations
 
 _Parameters_
 
-stackSize is the size of a stack to be allocated in bytes
+stack_size is the size of a stack to be allocated in bytes
 
 _Returns_
 
@@ -2529,8 +2527,8 @@ constexpr std::variant<
     std::monostate,
     cu0::Strand::SetStackSizeError,
     cu0::Strand::ResourceError
-> cu0::Strand::allocateStack<cu0::Strand::Stage::NOT_LAUNCHED>(
-    const std::size_t stackSize
+> cu0::Strand::allocate_stack<cu0::Strand::Stage::NOT_LAUNCHED>(
+    const std::size_t stack_size
 );
 #endif
 #endif
@@ -2540,11 +2538,11 @@ allocates stack for this strand before launch
 
 > **_NOTE:_** allocated stack should be deallocated
 
-> **_SEE:_** `cu0::Strand::deallocateStack()`
+> **_SEE:_** `cu0::Strand::deallocate_stack()`
 
 _Parameters_
 
-stackSize is the size of a stack to be allocated in bytes
+stack_size is the size of a stack to be allocated in bytes
 
 _Returns_
 
@@ -2558,7 +2556,7 @@ else => error code
 #if __has_include(<pthread.h>)
 template <cu0::Strand::Stage stage>
 constexpr std::variant<std::monostate> 
-cu0::Strand::deallocateStack() = delete;
+cu0::Strand::deallocate_stack() = delete;
 #endif
 ```
 
@@ -2578,7 +2576,7 @@ if no error was reported => std::monostate
 #if __has_include(<stdlib.h>) && __has_include(<unistd.h>)
 template <>
 constexpr std::variant<std::monostate> 
-cu0::Strand::deallocateStack<cu0::Strand::Stage::NOT_LAUNCHED>();
+cu0::Strand::deallocate_stack<cu0::Strand::Stage::NOT_LAUNCHED>();
 #endif
 #endif
 ```
@@ -2586,7 +2584,7 @@ cu0::Strand::deallocateStack<cu0::Strand::Stage::NOT_LAUNCHED>();
 deallocates stack from this strand
 
 > **_NOTE:_** use after `cu0::Strand::join()` if 
-`cu0::Strand::allocateStack(std::size_t)` was called
+`cu0::Strand::allocate_stack(std::size_t)` was called
 
 _Returns_
 
@@ -2803,7 +2801,7 @@ protected:
 std::chrono::time_point<
     std::chrono::steady_clock,
     std::chrono::duration<Rep, Period>
-> cu0::AsyncCoarseTimer<Rep, Period>::launchTime_;
+> cu0::AsyncCoarseTimer<Rep, Period>::launch_time_;
 ```
 
 time point when timer was launched

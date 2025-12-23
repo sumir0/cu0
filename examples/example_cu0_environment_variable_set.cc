@@ -7,7 +7,7 @@
 //!         a compile-time warning will be present
 //!     else (if all features are supported) =>
 //!         no feature-related compile-time warnings will be present
-#ifdef not_an_x
+#ifdef NOT_AN_X
 #warning not a *n.x platform was detected (linux, unix, etc.) => \
 cu0::EnvironmentVariable::set(std::string) will not be used in the example
 int main() {}
@@ -17,12 +17,12 @@ int main() {
   //! @note create an environment variable without syncing with the environment
   //!     because we will set the value of the environment variable later
   //!     no syncing before that is needed
-  auto environmentVariable = cu0::EnvironmentVariable::unsynced("KEY");
+  auto environment_variable = cu0::EnvironmentVariable::unsynced("KEY");
   //! @note set the value of the environment variable
   //! @note automatically updates the environment with the value
-  environmentVariable.set("some_value");
+  environment_variable.set("some_value");
   //! @note access cached value of the environment variable
-  const auto& cached = environmentVariable.cached();
+  const auto& cached = environment_variable.cached();
   std::cout << "Value of the environment variable 'KEY': " <<
       (cached.has_value() ? cached.value() : "<not-set>") << '\n';
 }

@@ -8,50 +8,50 @@
 #endif
 
 int main() {
-  auto strandCreateVariant = cu0::Strand::create([](){ return; });
-  assert(std::holds_alternative<cu0::Strand>(strandCreateVariant));
+  auto strand_create_variant = cu0::Strand::create([](){ return; });
+  assert(std::holds_alternative<cu0::Strand>(strand_create_variant));
 
-  auto& strand = std::get<cu0::Strand>(strandCreateVariant);
+  auto& strand = std::get<cu0::Strand>(strand_create_variant);
 
 #if __has_include(<pthread.h>)
-  const auto minPriorityRoundRobin = sched_get_priority_min(
+  const auto min_priority_round_robin = sched_get_priority_min(
       static_cast<int>(cu0::Strand::Policy::PTHREAD_RR)
   );
-  const auto maxPriorityRoundRobin = sched_get_priority_max(
+  const auto max_priority_round_robin = sched_get_priority_max(
       static_cast<int>(cu0::Strand::Policy::PTHREAD_RR)
   );
-  const auto policyToSet = cu0::Strand::Policy::PTHREAD_RR;
-  auto priorityToSet = minPriorityRoundRobin;
+  const auto policy_to_set = cu0::Strand::Policy::PTHREAD_RR;
+  auto priorityToSet = min_priority_round_robin;
 
   {
     //! check scheduling getter
-    const auto schedulingGetVariant =
+    const auto scheduling_get_variant =
         strand.scheduling<cu0::Strand::Stage::NOT_LAUNCHED>();
     assert(std::holds_alternative<typename cu0::Strand::Scheduling>(
-        schedulingGetVariant
+        scheduling_get_variant
     ));
     const auto& scheduling =
-        std::get<typename cu0::Strand::Scheduling>(schedulingGetVariant);
+        std::get<typename cu0::Strand::Scheduling>(scheduling_get_variant);
     assert(scheduling.policy == cu0::Strand::Policy::PTHREAD_OTHER);
     assert(scheduling.priority == 0);
 
     //! check scheduling setter
-    const auto schedulingSetVariant =
+    const auto scheduling_set_variant =
         strand.scheduling<cu0::Strand::Stage::NOT_LAUNCHED>({
-          .policy = policyToSet,
+          .policy = policy_to_set,
           .priority = priorityToSet,
         });
-    assert(std::holds_alternative<std::monostate>(schedulingSetVariant));
+    assert(std::holds_alternative<std::monostate>(scheduling_set_variant));
     {
-      const auto schedulingGetVariantAfterSet =
+      const auto scheduling_get_variant_after_set =
           strand.scheduling<cu0::Strand::Stage::NOT_LAUNCHED>();
       assert(std::holds_alternative<typename cu0::Strand::Scheduling>(
-          schedulingGetVariantAfterSet
+          scheduling_get_variant_after_set
       ));
       const auto& scheduling = std::get<typename cu0::Strand::Scheduling>(
-          schedulingGetVariantAfterSet
+          scheduling_get_variant_after_set
       );
-      assert(scheduling.policy == policyToSet);
+      assert(scheduling.policy == policy_to_set);
       assert(scheduling.priority == priorityToSet);
     }
   }
@@ -66,33 +66,33 @@ will not be checked
 #if __has_include(<pthread.h>)
   {
     //! check priority getter
-    const auto priorityGetVariant =
+    const auto priority_get_variant =
         strand.priority<cu0::Strand::Stage::NOT_LAUNCHED>();
     assert(std::holds_alternative<
-        typename cu0::Strand::priority_type
-    >(priorityGetVariant));
+        typename cu0::Strand::PriorityType
+    >(priority_get_variant));
     const auto& priority = std::get<
-        typename cu0::Strand::priority_type
-    >(priorityGetVariant);
-    assert(priority == minPriorityRoundRobin);
+        typename cu0::Strand::PriorityType
+    >(priority_get_variant);
+    assert(priority == min_priority_round_robin);
 
-    if (minPriorityRoundRobin + 1 <= maxPriorityRoundRobin) {
-      priorityToSet = minPriorityRoundRobin + 1;
+    if (min_priority_round_robin + 1 <= max_priority_round_robin) {
+      priorityToSet = min_priority_round_robin + 1;
     }
 
     //! check priority setter
-    const auto prioritySetVariant =
+    const auto priority_set_variant =
         strand.priority<cu0::Strand::Stage::NOT_LAUNCHED>(priorityToSet);
-    assert(std::holds_alternative<std::monostate>(prioritySetVariant));
+    assert(std::holds_alternative<std::monostate>(priority_set_variant));
     {
-      const auto priorityGetVariantAfterSet =
+      const auto priority_get_variant_after_set =
           strand.priority<cu0::Strand::Stage::NOT_LAUNCHED>();
       assert(std::holds_alternative<
-          typename cu0::Strand::priority_type
-      >(priorityGetVariantAfterSet));
+          typename cu0::Strand::PriorityType
+      >(priority_get_variant_after_set));
       const auto& priority = std::get<
-          typename cu0::Strand::priority_type
-      >(priorityGetVariantAfterSet);
+          typename cu0::Strand::PriorityType
+      >(priority_get_variant_after_set);
       assert(priority == priorityToSet);
     }
   }
@@ -111,41 +111,41 @@ will not be checked
 #if __has_include(<pthread.h>)
   {
     //! check scheduling getter after launch
-    const auto schedulingGetVariant =
+    const auto scheduling_get_variant =
         strand.scheduling<cu0::Strand::Stage::LAUNCHED>();
     assert(std::holds_alternative<
         typename cu0::Strand::Scheduling
-    >(schedulingGetVariant));
+    >(scheduling_get_variant));
     const auto& scheduling =
-        std::get<typename cu0::Strand::Scheduling>(schedulingGetVariant);
-    assert(scheduling.policy == policyToSet);
+        std::get<typename cu0::Strand::Scheduling>(scheduling_get_variant);
+    assert(scheduling.policy == policy_to_set);
     assert(scheduling.priority == priorityToSet);
   }
 
-  if (minPriorityRoundRobin + 2 <= maxPriorityRoundRobin) {
-    priorityToSet = minPriorityRoundRobin + 2;
+  if (min_priority_round_robin + 2 <= max_priority_round_robin) {
+    priorityToSet = min_priority_round_robin + 2;
   }
 
   {
     //! check scheduling setter after launch
-    const auto schedulingSetVariant =
+    const auto scheduling_set_variant =
         strand.scheduling<cu0::Strand::Stage::LAUNCHED>(cu0::Strand::Scheduling{
-          .policy = policyToSet,
+          .policy = policy_to_set,
           .priority = priorityToSet,
         });
-    assert(std::holds_alternative<std::monostate>(schedulingSetVariant));
+    assert(std::holds_alternative<std::monostate>(scheduling_set_variant));
   }
 
   {
     //! check scheduling getter after setter
-    const auto schedulingGetVariant =
+    const auto scheduling_get_variant =
         strand.scheduling<cu0::Strand::Stage::LAUNCHED>();
     assert(std::holds_alternative<
         typename cu0::Strand::Scheduling
-    >(schedulingGetVariant));
+    >(scheduling_get_variant));
     const auto& scheduling =
-        std::get<typename cu0::Strand::Scheduling>(schedulingGetVariant);
-    assert(scheduling.policy == policyToSet);
+        std::get<typename cu0::Strand::Scheduling>(scheduling_get_variant);
+    assert(scheduling.policy == policy_to_set);
     assert(scheduling.priority == priorityToSet);
   }
 #else
@@ -159,36 +159,36 @@ not be checked
 #if __has_include(<pthread.h>)
   {
     //! check priority getter after launch
-    const auto priorityGetVariant =
+    const auto priority_get_variant =
         strand.priority<cu0::Strand::Stage::LAUNCHED>();
     assert(std::holds_alternative<
-        typename cu0::Strand::priority_type
-    >(priorityGetVariant));
+        typename cu0::Strand::PriorityType
+    >(priority_get_variant));
     const auto& priority =
-        std::get<typename cu0::Strand::priority_type>(priorityGetVariant);
+        std::get<typename cu0::Strand::PriorityType>(priority_get_variant);
     assert(priority == priorityToSet);
   }
 
-  if (minPriorityRoundRobin + 3 <= minPriorityRoundRobin) {
-    priorityToSet = minPriorityRoundRobin + 3;
+  if (min_priority_round_robin + 3 <= min_priority_round_robin) {
+    priorityToSet = min_priority_round_robin + 3;
   }
 
   {
     //! check priority setter after launch
-    const auto prioritySetVariant =
+    const auto priority_set_variant =
         strand.priority<cu0::Strand::Stage::LAUNCHED>(priorityToSet);
-    assert(std::holds_alternative<std::monostate>(prioritySetVariant));
+    assert(std::holds_alternative<std::monostate>(priority_set_variant));
   }
 
   {
     //! check priority getter after setter
-    const auto priorityGetVariant =
+    const auto priority_get_variant =
         strand.priority<cu0::Strand::Stage::LAUNCHED>();
     assert(std::holds_alternative<
-        typename cu0::Strand::priority_type
-    >(priorityGetVariant));
+        typename cu0::Strand::PriorityType
+    >(priority_get_variant));
     const auto& priority =
-        std::get<typename cu0::Strand::priority_type>(priorityGetVariant);
+        std::get<typename cu0::Strand::PriorityType>(priority_get_variant);
     assert(priority == priorityToSet);
   }
 #else
@@ -200,8 +200,8 @@ not be checked
 #endif
 
   //! check join function
-  const auto joinVariant = strand.join();
-  assert(std::holds_alternative<std::monostate>(joinVariant));
+  const auto join_variant = strand.join();
+  assert(std::holds_alternative<std::monostate>(join_variant));
 
   return 0;
 }

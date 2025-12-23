@@ -15,9 +15,9 @@ int main() {}
 
 int main() {
   //! @note not supported on all platforms yet
-  //! @note thisProcess contains a representation of the current process
-  const auto thisProcess = cu0::Process::current();
-  std::cout << "Pid of this process: " << thisProcess.pid() << '\n';
+  //! @note contains a representation of the current process
+  const auto this_process = cu0::Process::current();
+  std::cout << "Pid of this process: " << this_process.pid() << '\n';
 }
 
 #endif

@@ -15,9 +15,9 @@ int main() {}
 #else
 
 int main() {
-  const auto thisProcess = cu0::Process::current();
+  const auto this_process = cu0::Process::current();
   //! @note pid contains value of the process identifier of the current process
-  const auto& pid = thisProcess.pid();
+  const auto& pid = this_process.pid();
   std::cout << "This process identifier: " << pid << '\n';
 }
 

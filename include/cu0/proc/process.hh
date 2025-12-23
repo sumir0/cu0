@@ -9,45 +9,45 @@
 #warning <unistd.h> is not found => \
     cu0::Process::stdin() will not be supported
 #warning <unistd.h> is not found => \
-    cu0::Process::stdinCautious() will not be supported
+    cu0::Process::stdin_cautious() will not be supported
 #warning <unistd.h> is not found => \
     cu0::Process::stdout() will not be supported
 #warning <unistd.h> is not found => \
-    cu0::Process::stdoutCautious() will not be supported
+    cu0::Process::stdout_cautious() will not be supported
 #warning <unistd.h> is not found => \
     cu0::Process::stderr() will not be supported
 #warning <unistd.h> is not found => \
-    cu0::Process::stderrCautious() will not be supported
+    cu0::Process::stderr_cautious() will not be supported
 #endif
 #if !__has_include(<sys/types.h>)
 #warning <sys/types.h> is not found => \
     cu0::Process::wait() will not be supported
 #warning <sys/types.h> is not found => \
-    cu0::Process::waitCautious() will not be supported
+    cu0::Process::wait_cautious() will not be supported
 #warning <sys/types.h> is not found => \
-    cu0::Process::exitCode() will not be supported
+    cu0::Process::exit_code() will not be supported
 #warning <sys/types.h> is not found => \
-    cu0::Process::terminationCode() will not be supported
+    cu0::Process::termination_code() will not be supported
 #warning <sys/types.h> is not found => \
-    cu0::Process::stopCode() will not be supported
+    cu0::Process::stop_code() will not be supported
 #endif
 #if !__has_include(<sys/wait.h>)
 #warning <sys/wait.h> is not found => \
     cu0::Process::wait() will not be supported
 #warning <sys/wait.h> is not found => \
-    cu0::Process::waitCautious() will not be supported
+    cu0::Process::wait_cautious() will not be supported
 #warning <sys/wait.h> is not found => \
-    cu0::Process::exitCode() will not be supported
+    cu0::Process::exit_code() will not be supported
 #warning <sys/wait.h> is not found => \
-    cu0::Process::terminationCode() will not be supported
+    cu0::Process::termination_code() will not be supported
 #warning <sys/wait.h> is not found => \
-    cu0::Process::stopCode() will not be supported
+    cu0::Process::stop_code() will not be supported
 #endif
 #if !__has_include(<signal.h>)
 #warning <signal.h> is not found => \
     cu0::Process::signal() will not be supported
 #warning <signal.h> is not found => \
-    cu0::Process::signalCautious() will not be supported
+    cu0::Process::signal_cautious() will not be supported
 #endif
 
 #include <optional>
@@ -78,7 +78,7 @@ struct Process {
 public:
 #if __has_include(<unistd.h>)
   /*!
-   * @brief enum of possible errors for create() and createPipeless() functions
+   * @brief enum of possible errors for create() and create_pipeless() functions
    */
   enum struct CreateError {
     AGAIN = EAGAIN, //! @see EAGAIN
@@ -91,7 +91,7 @@ public:
 #endif
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   /*!
-   * @brief enum of possible errors for waitCautious() function
+   * @brief enum of possible errors for wait_cautious() function
    */
   enum struct WaitError {
     CHILD = ECHILD, //! @see ECHILD
@@ -101,7 +101,7 @@ public:
 #endif
 #if __has_include(<unistd.h>)
   /*!
-   * @brief enum of possible errors for stdinCautious() function
+   * @brief enum of possible errors for stdin_cautious() function
    */
   enum struct WriteError {
     AGAIN = EAGAIN, //! @see EAGAIN
@@ -125,7 +125,7 @@ public:
 #endif
 #if __has_include(<unistd.h>)
   /*!
-   * @brief enum of possible errors for stdoutCautious() and stderrCautious()
+   * @brief enum of possible errors for stdout_cautious() and stderr_cautious()
    *     functions
    */
   enum struct ReadError {
@@ -152,7 +152,7 @@ public:
 #endif
 #if __has_include(<signal.h>)
   /*!
-   * @brief enum of possible errors for signalCautious() function
+   * @brief enum of possible errors for signal_cautious() function
    */
   enum struct SignalError {
     INVAL = EINVAL, //! @see EINVAL
@@ -165,7 +165,8 @@ public:
    * @brief constructs an instance using the current process in which
    *     this function is called
    * @note for the returned current process
-   *     stdin(), stdout(), stderr() member functions are not supported yet
+   *     stdin(), stdout(), stderr() and their corresponding cautious member
+   *     functions are not supported yet
    *     @see implementation details of Process::current()
    * @return current process
    */
@@ -194,7 +195,7 @@ public:
    *     else => error code
    */
   [[nodiscard]]
-  static std::variant<Process, CreateError> createPipeless(
+  static std::variant<Process, CreateError> create_pipeless(
       const Executable& executable
   );
 #endif
@@ -228,7 +229,7 @@ public:
    *     else => empty optional
    */
   [[nodiscard]]
-  constexpr std::optional<int> stdinPipe() const;
+  constexpr std::optional<int> stdin_pipe() const;
   /*!
    * @brief accesses stdout pipe file descriptor
    * @return
@@ -236,7 +237,7 @@ public:
    *     else => empty optional
    */
   [[nodiscard]]
-  constexpr std::optional<int> stdoutPipe() const;
+  constexpr std::optional<int> stdout_pipe() const;
   /*!
    * @brief accesses stderr pipe file descriptor
    * @return
@@ -244,7 +245,7 @@ public:
    *     else => empty optional
    */
   [[nodiscard]]
-  constexpr std::optional<int> stderrPipe() const;
+  constexpr std::optional<int> stderr_pipe() const;
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   /*!
    * @brief waits for the process to exit or to be terminated or to be stopped
@@ -253,14 +254,13 @@ public:
 #endif
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   /*!
-   * @brief waitCautious waits for the process to exit or to be terminated or
-   *     to be stopped
+   * @brief waits for the process to exit or to be terminated or to be stopped
    * @return
    *     if no error was reported => std::monostate
    *     else => error code
    */
   [[nodiscard]]
-  std::variant<std::monostate, WaitError> waitCautious();
+  std::variant<std::monostate, WaitError> wait_cautious();
 #endif
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   /*!
@@ -270,7 +270,7 @@ public:
    * @return exit status code as a const reference
    */
   [[nodiscard]]
-  constexpr const std::optional<int>& exitCode() const;
+  constexpr const std::optional<int>& exit_code() const;
 #endif
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   /*!
@@ -281,7 +281,7 @@ public:
    * @return termination signal code as a const reference
    */
   [[nodiscard]]
-  constexpr const std::optional<int>& terminationCode() const;
+  constexpr const std::optional<int>& termination_code() const;
 #endif
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   /*!
@@ -291,7 +291,7 @@ public:
    * @return stop signal code as a const reference
    */
   [[nodiscard]]
-  constexpr const std::optional<int>& stopCode() const;
+  constexpr const std::optional<int>& stop_code() const;
 #endif
 #if __has_include(<unistd.h>)
   /*!
@@ -304,11 +304,11 @@ public:
   /*!
    * @brief passes the specified input to the stdin
    * @param input is the input value
-   * @return result of Process::writeInto() @see Process::writeInto()
+   * @return result of Process::write_into() @see Process::write_into()
    */
   [[nodiscard]]
   std::tuple<std::variant<std::monostate, WriteError>, std::size_t>
-      stdinCautious(const std::string& input) const;
+      stdin_cautious(const std::string& input) const;
 #endif
 #if __has_include(<unistd.h>)
   /*!
@@ -321,11 +321,11 @@ public:
 #if __has_include(<unistd.h>)
   /*!
    * @brief returns the value of the stdout
-   * @return result of Process::readFrom() @see Process::readFrom()
+   * @return result of Process::read_from() @see Process::read_from()
    */
   [[nodiscard]]
   std::tuple<std::variant<std::monostate, ReadError>, std::string>
-      stdoutCautious() const;
+      stdout_cautious() const;
 #endif
 #if __has_include(<unistd.h>)
   /*!
@@ -338,11 +338,11 @@ public:
 #if __has_include(<unistd.h>)
   /*!
    * @brief returns the value of the stderr
-   * @return result of Process::readFrom() @see Process::readFrom()
+   * @return result of Process::read_from() @see Process::read_from()
    */
   [[nodiscard]]
   std::tuple<std::variant<std::monostate, ReadError>, std::string>
-      stderrCautious() const;
+      stderr_cautious() const;
 #endif
 #if __has_include(<signal.h>)
   /*!
@@ -360,7 +360,7 @@ public:
    *     else => error code
    */
   [[nodiscard]]
-  std::variant<std::monostate, SignalError> signalCautious(
+  std::variant<std::monostate, SignalError> signal_cautious(
       const int& code
   ) const;
 #endif
@@ -390,7 +390,7 @@ protected:
    *     if Return == void => nothing
    */
   template <std::size_t BUFFER_SIZE, class Return>
-  static Return writeInto(
+  static Return write_into(
       const int& pipe,
       const std::string& input
   );
@@ -419,7 +419,7 @@ protected:
    */
   template <std::size_t BUFFER_SIZE, class Return>
   [[nodiscard]]
-  static Return readFrom(const int& pipe);
+  static Return read_from(const int& pipe);
 #endif
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   /*!
@@ -433,7 +433,7 @@ protected:
    *     if Return == void => no errors are returned and handled
    */
   template <class Return>
-  Return waitExitLoop();
+  Return wait_exit_loop();
 #endif
   /*!
    * @brief constructs an instance with default values
@@ -447,22 +447,22 @@ protected:
   //! process identifier
   unsigned pid_ = 0;
   //! stdin file descriptor
-  int stdinPipe_ = -1;
+  int stdin_pipe_ = -1;
   //! stdout file descriptor
-  int stdoutPipe_ = -1;
+  int stdout_pipe_ = -1;
   //! stderr file descriptor
-  int stderrPipe_ = -1;
+  int stderr_pipe_ = -1;
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
   //! if waited => actual exit status code value if present @see Process::wait()
   //! else => empty exit status code value
-  std::optional<int> exitCode_ = {};
+  std::optional<int> exit_code_ = {};
   //! if waited => actual termination signal code value if present
   //!     @see Process::wait()
   //! else => empty termination signal code value
-  std::optional<int> terminationCode_ = {};
+  std::optional<int> termination_code_ = {};
   //! if waited => actual stop signal code value if present @see Process::wait()
   //! else => empty stop signal code value
-  std::optional<int> stopCode_ = {};
+  std::optional<int> stop_code_ = {};
 #endif
 private:
 };
@@ -481,17 +481,17 @@ inline Process Process::current() {
   //!     set stdin pipe to -1
   //! there will be no effect if stdin() is tried to be called
   //! though some errors may be returned by a call
-  ret.stdinPipe_ = -1;
+  ret.stdin_pipe_ = -1;
   //! reading from stdout of the same process is not supported yet =>
   //!     set stdout pipe to -1
   //! there will be an empty string value if stdout() is tried to be called
   //! though some errors may be returned by a call
-  ret.stdoutPipe_ = -1;
+  ret.stdout_pipe_ = -1;
   //! reading stderr of the same process is not supported yet =>
   //!     set stderr pipe to -1
   //! there will be an empty string value if stderr() is tried to be called
   //! though some errors may be returned by a call
-  ret.stderrPipe_ = -1;
+  ret.stderr_pipe_ = -1;
   //! return the process
   return ret;
 }
@@ -501,87 +501,87 @@ inline Process Process::current() {
 inline std::variant<Process, typename Process::CreateError> Process::create(
     const Executable& executable
 ) {
-  const auto [argv, argvSize] = util::argvOf(executable);
-  const auto [envp, envpSize] = util::envpOf(executable);
-  auto argvRaw = std::make_unique<char*[]>(argvSize);
-  for (auto i = 0u; i < argvSize; i++) {
-    argvRaw[i] = argv[i].get();
+  const auto [argv, argv_size] = util::argv_of(executable);
+  const auto [envp, envp_size] = util::envp_of(executable);
+  auto argv_raw = std::make_unique<char*[]>(argv_size);
+  for (auto i = 0u; i < argv_size; i++) {
+    argv_raw[i] = argv[i].get();
   }
-  auto envpRaw = std::make_unique<char*[]>(envpSize);
-  for (auto i = 0u; i < envpSize; i++) {
-    envpRaw[i] = envp[i].get();
+  auto envp_raw = std::make_unique<char*[]>(envp_size);
+  for (auto i = 0u; i < envp_size; i++) {
+    envp_raw[i] = envp[i].get();
   }
-  int inFd[2];
-  int outFd[2];
-  int errFd[2];
-  if (::pipe(inFd) != 0) {
+  int in_fd[2];
+  int out_fd[2];
+  int err_fd[2];
+  if (::pipe(in_fd) != 0) {
     return static_cast<CreateError>(errno);
   }
-  if (::pipe(outFd) != 0) {
+  if (::pipe(out_fd) != 0) {
     const auto ret = static_cast<CreateError>(errno);
-    ::close(inFd[0]);
-    ::close(inFd[1]);
+    ::close(in_fd[0]);
+    ::close(in_fd[1]);
     return ret;
   }
-  if (::pipe(errFd) != 0) {
+  if (::pipe(err_fd) != 0) {
     const auto ret = static_cast<CreateError>(errno);
-    ::close(inFd[0]);
-    ::close(inFd[1]);
-    ::close(outFd[0]);
-    ::close(outFd[1]);
+    ::close(in_fd[0]);
+    ::close(in_fd[1]);
+    ::close(out_fd[0]);
+    ::close(out_fd[1]);
     return ret;
   }
   const auto pid = ::vfork();
   if (pid == 0) { //! forked process
-    ::close(inFd[1]);
-    ::close(outFd[0]);
-    ::close(errFd[0]);
-    ::dup2(inFd[0], STDIN_FILENO);
-    ::dup2(outFd[1], STDOUT_FILENO);
-    ::dup2(errFd[1], STDERR_FILENO);
-    ::close(inFd[0]);
-    ::close(outFd[1]);
-    ::close(errFd[1]);
-    const auto execRet = ::execve(argvRaw[0], argvRaw.get(), envpRaw.get());
-    if (execRet != 0) {
+    ::close(in_fd[1]);
+    ::close(out_fd[0]);
+    ::close(err_fd[0]);
+    ::dup2(in_fd[0], STDIN_FILENO);
+    ::dup2(out_fd[1], STDOUT_FILENO);
+    ::dup2(err_fd[1], STDERR_FILENO);
+    ::close(in_fd[0]);
+    ::close(out_fd[1]);
+    ::close(err_fd[1]);
+    const auto exec_ret = ::execve(argv_raw[0], argv_raw.get(), envp_raw.get());
+    if (exec_ret != 0) {
       //! fail
       exit(errno);
     }
   }
-  ::close(inFd[0]);
-  ::close(outFd[1]);
-  ::close(errFd[1]);
+  ::close(in_fd[0]);
+  ::close(out_fd[1]);
+  ::close(err_fd[1]);
   if (pid < 0) { //! fork failed
     return static_cast<CreateError>(errno);
   }
   auto process = Process{};
   process.pid_ = pid;
-  process.stdinPipe_ = inFd[1];
-  process.stdoutPipe_ = outFd[0];
-  process.stderrPipe_ = errFd[0];
+  process.stdin_pipe_ = in_fd[1];
+  process.stdout_pipe_ = out_fd[0];
+  process.stderr_pipe_ = err_fd[0];
   return process;
 }
 #endif
 
 #if __has_include(<unistd.h>)
 inline std::variant<Process, typename Process::CreateError>
-Process::createPipeless(
+Process::create_pipeless(
     const Executable& executable
 ) {
-  const auto [argv, argvSize] = util::argvOf(executable);
-  const auto [envp, envpSize] = util::envpOf(executable);
-  auto argvRaw = std::make_unique<char*[]>(argvSize);
-  for (auto i = 0u; i < argvSize; i++) {
-    argvRaw[i] = argv[i].get();
+  const auto [argv, argv_size] = util::argv_of(executable);
+  const auto [envp, envp_size] = util::envp_of(executable);
+  auto argv_raw = std::make_unique<char*[]>(argv_size);
+  for (auto i = 0u; i < argv_size; i++) {
+    argv_raw[i] = argv[i].get();
   }
-  auto envpRaw = std::make_unique<char*[]>(envpSize);
-  for (auto i = 0u; i < envpSize; i++) {
-    envpRaw[i] = envp[i].get();
+  auto envp_raw = std::make_unique<char*[]>(envp_size);
+  for (auto i = 0u; i < envp_size; i++) {
+    envp_raw[i] = envp[i].get();
   }
   const auto pid = ::vfork();
   if (pid == 0) { //! forked process
-    const auto execRet = ::execve(argvRaw[0], argvRaw.get(), envpRaw.get());
-    if (execRet != 0) {
+    const auto exec_ret = ::execve(argv_raw[0], argv_raw.get(), envp_raw.get());
+    if (exec_ret != 0) {
       //! fail
       exit(errno);
     }
@@ -597,9 +597,9 @@ Process::createPipeless(
 
 inline Process::~Process() {
 #if __has_include(<unistd.h>)
-  ::close(this->stdinPipe_);
-  ::close(this->stdoutPipe_);
-  ::close(this->stderrPipe_);
+  ::close(this->stdin_pipe_);
+  ::close(this->stdout_pipe_);
+  ::close(this->stderr_pipe_);
 #endif
 }
 
@@ -618,61 +618,61 @@ constexpr const unsigned& Process::pid() const {
   return this->pid_;
 }
 
-constexpr std::optional<int> Process::stdinPipe() const {
-  if (this->stdinPipe_ < 0) {
+constexpr std::optional<int> Process::stdin_pipe() const {
+  if (this->stdin_pipe_ < 0) {
     return {};
   }
-  return this->stdinPipe_;
+  return this->stdin_pipe_;
 }
 
-constexpr std::optional<int> Process::stdoutPipe() const {
-  if (this->stdoutPipe_ < 0) {
+constexpr std::optional<int> Process::stdout_pipe() const {
+  if (this->stdout_pipe_ < 0) {
     return {};
   }
-  return this->stdoutPipe_;
+  return this->stdout_pipe_;
 }
 
-constexpr std::optional<int> Process::stderrPipe() const {
-  if (this->stderrPipe_ < 0) {
+constexpr std::optional<int> Process::stderr_pipe() const {
+  if (this->stderr_pipe_ < 0) {
     return {};
   }
-  return this->stderrPipe_;
+  return this->stderr_pipe_;
 }
 
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
 inline void Process::wait() {
-  this->waitExitLoop<void>();
+  this->wait_exit_loop<void>();
 }
 #endif
 
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
 inline std::variant<std::monostate, typename Process::WaitError>
-Process::waitCautious() {
-  return this->waitExitLoop<std::variant<std::monostate, WaitError>>();
+Process::wait_cautious() {
+  return this->wait_exit_loop<std::variant<std::monostate, WaitError>>();
 }
 #endif
 
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
-constexpr const std::optional<int>& Process::exitCode() const {
-  return this->exitCode_;
+constexpr const std::optional<int>& Process::exit_code() const {
+  return this->exit_code_;
 }
 #endif
 
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
-constexpr const std::optional<int>& Process::terminationCode() const {
-  return this->terminationCode_;
+constexpr const std::optional<int>& Process::termination_code() const {
+  return this->termination_code_;
 }
 #endif
 
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
-constexpr const std::optional<int>& Process::stopCode() const {
-  return this->stopCode_;
+constexpr const std::optional<int>& Process::stop_code() const {
+  return this->stop_code_;
 }
 #endif
 
 #if __has_include(<unistd.h>)
 inline void Process::stdin(const std::string& input) const {
-  return Process::writeInto<1024, void>(this->stdinPipe_, input);
+  return Process::write_into<1024, void>(this->stdin_pipe_, input);
 }
 #endif
 
@@ -680,20 +680,20 @@ inline void Process::stdin(const std::string& input) const {
 inline std::tuple<
     std::variant<std::monostate, typename Process::WriteError>,
     std::size_t
-> Process::stdinCautious(
+> Process::stdin_cautious(
     const std::string& input
 ) const {
-  return Process::writeInto<
+  return Process::write_into<
       1024,
       std::tuple<std::variant<std::monostate, WriteError>, std::size_t>
-  >(this->stdinPipe_, input);
+  >(this->stdin_pipe_, input);
 }
 #endif
 
 #if __has_include(<unistd.h>)
 inline std::string
 Process::stdout() const {
-  return Process::readFrom<1024, std::string>(this->stdoutPipe_);
+  return Process::read_from<1024, std::string>(this->stdout_pipe_);
 }
 #endif
 
@@ -701,17 +701,17 @@ Process::stdout() const {
 inline std::tuple<
     std::variant<std::monostate, typename Process::ReadError>,
     std::string
-> Process::stdoutCautious() const {
-  return Process::readFrom<
+> Process::stdout_cautious() const {
+  return Process::read_from<
       1024,
       std::tuple<std::variant<std::monostate, ReadError>, std::string>
-  >(this->stdoutPipe_);
+  >(this->stdout_pipe_);
 }
 #endif
 
 #if __has_include(<unistd.h>)
 inline std::string Process::stderr() const {
-  return Process::readFrom<1024, std::string>(this->stderrPipe_);
+  return Process::read_from<1024, std::string>(this->stderr_pipe_);
 }
 #endif
 
@@ -719,11 +719,11 @@ inline std::string Process::stderr() const {
 inline std::tuple<
     std::variant<std::monostate, typename Process::ReadError>,
     std::string
-> Process::stderrCautious() const {
-  return Process::readFrom<
+> Process::stderr_cautious() const {
+  return Process::read_from<
       1024,
       std::tuple<std::variant<std::monostate, ReadError>, std::string>
-  >(this->stderrPipe_);
+  >(this->stderr_pipe_);
 }
 #endif
 
@@ -735,7 +735,7 @@ inline void Process::signal(const int& code) const {
 
 #if __has_include(<signal.h>)
 inline std::variant<std::monostate, typename Process::SignalError>
-Process::signalCautious(
+Process::signal_cautious(
     const int& code
 ) const {
   if (::kill(this->pid_, code) != 0) {
@@ -747,7 +747,7 @@ Process::signalCautious(
 
 #if __has_include(<unistd.h>)
 template <std::size_t BUFFER_SIZE, class Return>
-Return Process::writeInto(
+Return Process::write_into(
     const int& pipe,
     const std::string& input
 ) {
@@ -757,9 +757,9 @@ Return Process::writeInto(
       std::is_same_v<Return, void> ||
       std::is_same_v<Return, non_void_return_type>
   );
-  [[maybe_unused]] std::size_t bytesWritten;
+  [[maybe_unused]] std::size_t bytes_written;
   if constexpr (std::is_same_v<Return, non_void_return_type>) {
-    bytesWritten = std::size_t{0};
+    bytes_written = std::size_t{0};
   }
   char buffer[BUFFER_SIZE];
   for (auto i = 0u; i <= input.size() / BUFFER_SIZE; i++) {
@@ -775,38 +775,38 @@ Return Process::writeInto(
     }
     auto bytes = 0;
     for (
-        auto writeResult = ::write(pipe, buffer, end);
+        auto write_result = ::write(pipe, buffer, end);
         ;
-        writeResult = ::write(pipe, buffer + bytes, end - bytes)
+        write_result = ::write(pipe, buffer + bytes, end - bytes)
     ) {
-      if (writeResult < 0) {
+      if (write_result < 0) {
         if constexpr (std::is_same_v<Return, void>) {
           return;
         } else { //! std::is_same_v<Return, non_void_return_type>
-          bytesWritten += bytes;
-          return { static_cast<WriteError>(errno), bytesWritten, };
+          bytes_written += bytes;
+          return { static_cast<WriteError>(errno), bytes_written, };
         }
       }
-      bytes += writeResult;
+      bytes += write_result;
       if (bytes >= static_cast<ssize_t>(end)) {
         break;
       }
     }
     if constexpr (std::is_same_v<Return, non_void_return_type>) {
-      bytesWritten += bytes;
+      bytes_written += bytes;
     }
   }
   if constexpr (std::is_same_v<Return, void>) {
     return;
   } else { //! std::is_same_v<Return, non_void_return_type>
-    return { std::monostate{}, bytesWritten, };
+    return { std::monostate{}, bytes_written, };
   }
 }
 #endif
 
 #if __has_include(<unistd.h>)
 template <std::size_t BUFFER_SIZE, class Return>
-inline Return Process::readFrom(const int& pipe) {
+inline Return Process::read_from(const int& pipe) {
   using non_void_return_type =
       std::tuple<std::variant<std::monostate, ReadError>, std::string>;
   static_assert(
@@ -839,7 +839,7 @@ inline Return Process::readFrom(const int& pipe) {
 
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
 template <class Return>
-inline Return Process::waitExitLoop() {
+inline Return Process::wait_exit_loop() {
   using non_void_return_type = std::variant<std::monostate, WaitError>;
   static_assert(
       std::is_same_v<Return, void> ||
@@ -861,18 +861,18 @@ inline Return Process::waitExitLoop() {
     }
     if (WIFEXITED(status) == 0) {
       if (WIFSIGNALED(status) != 0) {
-        this->terminationCode_ = WTERMSIG(status);
+        this->termination_code_ = WTERMSIG(status);
         //! no error handling is needed because the process has been waited
         //!     even if it was terminated
       }
       if (WIFSTOPPED(status) != 0) {
-        this->stopCode_ = WSTOPSIG(status);
+        this->stop_code_ = WSTOPSIG(status);
         //! no error handling is needed because the process has been waited
         //!     even if it was stopped
       }
       break;
     }
-    this->exitCode_ = WEXITSTATUS(status);
+    this->exit_code_ = WEXITSTATUS(status);
     break;
   }
   if constexpr (std::is_same_v<Return, non_void_return_type>) {
@@ -885,13 +885,13 @@ inline Return Process::waitExitLoop() {
 
 constexpr void Process::swap(Process&& other) {
   std::swap(this->pid_, other.pid_);
-  std::swap(this->stdinPipe_, other.stdinPipe_);
-  std::swap(this->stdoutPipe_, other.stdoutPipe_);
-  std::swap(this->stderrPipe_, other.stderrPipe_);
+  std::swap(this->stdin_pipe_, other.stdin_pipe_);
+  std::swap(this->stdout_pipe_, other.stdout_pipe_);
+  std::swap(this->stderr_pipe_, other.stderr_pipe_);
 #if __has_include(<sys/types.h>) && __has_include(<sys/wait.h>)
-  std::swap(this->exitCode_, other.exitCode_);
-  std::swap(this->terminationCode_, other.terminationCode_);
-  std::swap(this->stopCode_, other.stopCode_);
+  std::swap(this->exit_code_, other.exit_code_);
+  std::swap(this->termination_code_, other.termination_code_);
+  std::swap(this->stop_code_, other.stop_code_);
 #endif
 }
 

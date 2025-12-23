@@ -23,9 +23,10 @@ int main() {
   if (!std::holds_alternative<cu0::Process>(variant)) {
     std::cout << "Error: No processes were created" << '\n';
   } else {
-    //! @note createdProcess contains a representation of the running executable
-    const auto& createdProcess = std::get<cu0::Process>(variant);
-    std::cout << "Pid of the created process: " << createdProcess.pid() << '\n';
+    //! @note contains a representation of the running executable
+    const auto& created_process = std::get<cu0::Process>(variant);
+    std::cout << "Pid of the created process: " << created_process.pid() <<
+        '\n';
   }
 }
 

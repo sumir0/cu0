@@ -9,21 +9,21 @@
 //!         no feature-related compile-time warnings will be present
 #if !__has_include(<unistd.h>)
 #warning <unistd.h> is not found => \
-cu0::Process::stdinCautious() will not be used in the example
+cu0::Process::stdin_cautious() will not be used in the example
 int main() {}
 #else
 
 int main() {
   const auto variant = cu0::Process::create(cu0::Executable{
-    .binary = "someExecutable"
+    .binary = "some_executable"
   });
   if (!std::holds_alternative<cu0::Process>(variant)) {
     std::cout << "Error: the process was not created" << '\n';
   }
-  const auto& someProcess = std::get<cu0::Process>(variant);
+  const auto& some_process = std::get<cu0::Process>(variant);
   //! @note not supported on all platforms yet
   //! @note stdin passes an input to the stdin of the process
-  const auto [result, bytesWritten] = someProcess.stdinCautious("someInput");
+  const auto [result, bytes_written] = some_process.stdin_cautious("someInput");
   if (!std::holds_alternative<std::monostate>(result)) {
     std::cout << "Error: data was not fully passed to the stdin" << '\n';
   }

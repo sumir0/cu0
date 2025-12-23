@@ -65,12 +65,12 @@ int main() {
 int main() {
   //! @note an environment variable may not be set
   //! @note read value of the environment variable with the key 'KEY'
-  const auto environmentVariable = cu0::EnvironmentVariable::synced("KEY");
+  const auto environment_variable = cu0::EnvironmentVariable::synced("KEY");
   //! @note if the environment variable is not set =>
   //!     an empty optional is returned
   //! @note cached contains the value of the environment variable at the time of
   //!     last sync with the environment @see EnvironmentVariable::sync
-  const auto& cached = environmentVariable.cached();
+  const auto& cached = environment_variable.cached();
   std::cout << "Value of the environment variable 'KEY': " <<
       (cached.has_value() ? cached.value() : "<not-set>") << '\n';
 }
@@ -85,10 +85,10 @@ int main() {
 
 int main() {
   //! @note environment variable may not be set
-  auto environmentVariable = cu0::EnvironmentVariable::unsynced("KEY");
+  auto environment_variable = cu0::EnvironmentVariable::unsynced("KEY");
   //! @note wait for external environment variable change and
   //!     sync value of the environment variable with the key 'KEY'
-  const auto& synced = environmentVariable.sync();
+  const auto& synced = environment_variable.sync();
   std::cout << "Synced value of the environment variable 'KEY': " <<
       (synced.has_value() ? synced.value() : "<not-set>") << '\n';
 }
@@ -106,12 +106,12 @@ int main() {
   //! @note create an environment variable without syncing with the environment
   //!     because we will set the value of the environment variable later
   //!     no syncing before that is needed
-  auto environmentVariable = cu0::EnvironmentVariable::unsynced("KEY");
+  auto environment_variable = cu0::EnvironmentVariable::unsynced("KEY");
   //! @note set the value of the environment variable
   //! @note automatically updates the environment with the value
-  environmentVariable.set("some_value");
+  environment_variable.set("some_value");
   //! @note access cached value of the environment variable
-  const auto& cached = environmentVariable.cached();
+  const auto& cached = environment_variable.cached();
   std::cout << "Value of the environment variable 'KEY': " <<
       (cached.has_value() ? cached.value() : "<not-set>") << '\n';
 }
@@ -129,8 +129,10 @@ int main() {
 
 int main() {
   //! @note executable can be searched in a directory
-  const auto executable =
-      cu0::util::findBy("someExecutableName", std::filesystem::current_path());
+  const auto executable = cu0::util::find_by(
+      "some_executable_name", 
+      std::filesystem::current_path()
+  );
   //! @note if no executable is found then executable.binary is empty
   if (executable.binary.empty()) {
     std::cout << "Executable with the specified name was not found" << '\n';
@@ -155,7 +157,7 @@ int main() {
 int main() {
   //! @note executable can be searched in the current directory and
   //!     in the directories specified by the PATH environment variable
-  const auto executable = cu0::util::findBy("someExecutableName");
+  const auto executable = cu0::util::find_by("some_executable_name");
   //! @note if no executable is found then executable.binary is empty
   if (executable.binary.empty()) {
     std::cout << "Executable with the specified name was not found" << '\n';
@@ -184,9 +186,10 @@ int main() {
   if (!std::holds_alternative<cu0::Process>(variant)) {
     std::cout << "Error: No processes were created" << '\n';
   } else {
-    //! @note createdProcess contains a representation of the running executable
-    const auto& createdProcess = std::get<cu0::Process>(variant);
-    std::cout << "Pid of the created process: " << createdProcess.pid() << '\n';
+    //! @note contains a representation of the running executable
+    const auto& created_process = std::get<cu0::Process>(variant);
+    std::cout << "Pid of the created process: " << created_process.pid() << 
+        '\n';
   }
 }
 ```
@@ -199,9 +202,9 @@ int main() {
 
 int main() {
   //! @note not supported on all platforms yet
-  //! @note thisProcess contains a representation of the current process
-  const auto thisProcess = cu0::Process::current();
-  std::cout << "Pid of this process: " << thisProcess.pid() << '\n';
+  //! @note contains a representation of the current process
+  const auto this_process = cu0::Process::current();
+  std::cout << "Pid of this process: " << this_process.pid() << '\n';
 }
 ```
 
@@ -213,21 +216,21 @@ int main() {
 
 int main() {
   auto variant = cu0::Process::create(cu0::Executable{
-    .binary = "someExecutable"
+    .binary = "some_executable"
   });
   if (!std::holds_alternative<cu0::Process>(variant)) {
     std::cout << "Error: the process was not created" << '\n';
   }
-  auto& someProcess = std::get<cu0::Process>(variant);
-  someProcess.wait();
+  auto& some_process = std::get<cu0::Process>(variant);
+  some_process.wait();
   //! @note not supported on all platforms yet
   //! @note exit code can be obtained only after a call to the wait function
   //! @note exit code contains exit status code of the created process
-  const auto& exitCode = someProcess.exitCode();
-  if (!exitCode.has_value()) {
+  const auto& exit_code = some_process.exit_code();
+  if (!exit_code.has_value()) {
     std::cout << "The exit code was not obtained" << '\n';
   } else {
-    std::cout << "Exit code of the created process: " << *exitCode << '\n';
+    std::cout << "Exit code of the created process: " << *exit_code << '\n';
   }
 }
 ```
@@ -241,20 +244,20 @@ int main() {
 
 int main() {
   const auto variant = cu0::Process::create(cu0::Executable{
-    .binary = "someExecutable"
+    .binary = "some_executable"
   });
   if (!std::holds_alternative<cu0::Process>(variant)) {
     std::cout << "Error: the process was not created" << '\n';
   }
-  const auto& someProcess = std::get<cu0::Process>(variant);
+  const auto& some_process = std::get<cu0::Process>(variant);
   //! @note not supported on all platforms yet
   //! @note stdout contains standard output of the created process
   //!     at the moment of call
-  const auto outStr = someProcess.stdout();
-  if (outStr.empty()) {
+  const auto out_str = some_process.stdout();
+  if (out_str.empty()) {
     std::cout << "Error or stdout of the created process is empty" << '\n';
   } else {
-    std::cout << "Stdout of the created process: " << outStr << '\n';
+    std::cout << "Stdout of the created process: " << out_str << '\n';
   }
 }
 ```
@@ -268,15 +271,15 @@ int main() {
 
 int main() {
   const auto variant = cu0::Process::create(cu0::Executable{
-    .binary = "someExecutable"
+    .binary = "some_executable"
   });
   if (!std::holds_alternative<cu0::Process>(variant)) {
     std::cout << "Error: the process was not created" << '\n';
   }
-  const auto& someProcess = std::get<cu0::Process>(variant);
+  const auto& some_process = std::get<cu0::Process>(variant);
   //! @note not supported on all platforms yet
   //! @note stdin passes an input to the stdin of the process
-  someProcess.stdin("someInput");
+  some_process.stdin("someInput");
 }
 ```
 
@@ -289,15 +292,15 @@ int main() {
 
 int main() {
   const auto variant = cu0::Process::create(cu0::Executable{
-    .binary = "someExecutable"
+    .binary = "some_executable"
   });
   if (!std::holds_alternative<cu0::Process>(variant)) {
     std::cout << "Error: the process was not created" << '\n';
   }
-  const auto& someProcess = std::get<cu0::Process>(variant);
+  const auto& some_process = std::get<cu0::Process>(variant);
   //! @note not supported on all platforms yet
   //! @note signals the SIGTERM signal to the process
-  someProcess.signal(SIGTERM);
+  some_process.signal(SIGTERM);
 }
 ```
 
@@ -335,57 +338,57 @@ int main() {
     return 1;
   }
   auto& strand = std::get<cu0::Strand>(variant);
-  const auto policyToSet = cu0::Strand::Policy::PTHREAD_OTHER;
-  const auto minPriority =
-      sched_get_priority_min(static_cast<int>(policyToSet));
-  const auto setSchedulingResult =
+  const auto policy_to_set = cu0::Strand::Policy::PTHREAD_OTHER;
+  const auto min_priority =
+      sched_get_priority_min(static_cast<int>(policy_to_set));
+  const auto set_scheduling_result =
       strand.scheduling<cu0::Strand::Stage::NOT_LAUNCHED>({
-        .policy = policyToSet,
-        .priority = minPriority,
+        .policy = policy_to_set,
+        .priority = min_priority,
       });
-  if (!std::holds_alternative<std::monostate>(setSchedulingResult)) {
+  if (!std::holds_alternative<std::monostate>(set_scheduling_result)) {
     std::cout << "Error: the scheduling of the strand couldn't be modified" <<
         '\n';
     return 2;
   }
-  const auto runResult = strand.run();
-  if (!std::holds_alternative<std::monostate>(runResult)) {
+  const auto run_result = strand.run();
+  if (!std::holds_alternative<std::monostate>(run_result)) {
     std::cout << "Error: the strand couldn't be launched" << '\n';
     return 3;
   }
-  const auto getSchedulingResult =
+  const auto get_scheduling_result =
       strand.scheduling<cu0::Strand::Stage::LAUNCHED>();
   if (!std::holds_alternative<typename cu0::Strand::Scheduling>(
-      getSchedulingResult
+      get_scheduling_result
   )) {
     std::cout << "Error: the scheduling of the strand couldn't be retrieved" <<
         '\n';
   } else {
     const auto& scheduling =
-        std::get<typename cu0::Strand::Scheduling>(getSchedulingResult);
+        std::get<typename cu0::Strand::Scheduling>(get_scheduling_result);
     std::cout << "Info: the strand has scheduling == {" << '\n';
-    std::string policyString;
+    std::string policy_string;
     switch (static_cast<int>(scheduling.policy)) {
     case SCHED_OTHER:
-      policyString = "SCHED_OTHER";
+      policy_string = "SCHED_OTHER";
       break;
     case SCHED_FIFO:
-      policyString = "SCHED_FIFO";
+      policy_string = "SCHED_FIFO";
       break;
     case SCHED_RR:
-      policyString = "SCHED_RR";
+      policy_string = "SCHED_RR";
       break;
     default:
-      policyString = "?";
+      policy_string = "?";
       break;
     }
-    std::cout << "  .policy = " << policyString << "," <<
+    std::cout << "  .policy = " << policy_string << "," <<
         '\n';
     std::cout << "  .priority = " << scheduling.priority << "," << '\n';
     std::cout << "}" << '\n';
   }
-  const auto joinResult = strand.join();
-  if (!std::holds_alternative<std::monostate>(joinResult)) {
+  const auto join_result = strand.join();
+  if (!std::holds_alternative<std::monostate>(join_result)) {
     std::cout << "Error: the strand couldn't be joined" << '\n';
   }
 }

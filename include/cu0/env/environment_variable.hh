@@ -30,7 +30,7 @@ struct EnvironmentVariableData {
  */
 struct EnvironmentVariable {
 public:
-#ifndef not_an_x
+#if !defined(NOT_AN_X)
   /*!
    * @brief enum of possible errors during value setting
    */
@@ -93,7 +93,7 @@ public:
    * @return new cached value as a const reference
    */
   const std::optional<std::string>& sync();
-#ifndef not_an_x
+#if !defined(NOT_AN_X)
   /*!
    * @brief sets the value of the associated environment variable
    * @param value is the value to be set
@@ -103,7 +103,7 @@ public:
    */
   std::variant<std::monostate, SetError> set(std::string value);
 #endif
-#ifndef not_an_x
+#if !defined(NOT_AN_X)
   /*!
    * @brief unsets the value of the associated environment variable
    * @return
@@ -113,12 +113,12 @@ public:
   std::variant<std::monostate, SetError> unset();
 #endif
 protected:
-#ifndef not_an_x
+#if !defined(NOT_AN_X)
   /*!
    * @brief converts an error number (error code) to the ConvertTo type
    * @tparam ConvertTo is a struct conversion to which is needed
    * @note ConvertTo may be one of { SetError, }
-   * @param errorNumber is the error number (error code)
+   * @param error_number is the error number (error code)
    * @return converted value
    */
   template <class ConvertTo>
@@ -133,10 +133,10 @@ protected:
   EnvironmentVariableData data_{};
 };
 
-#ifndef not_an_x
+#if !defined(NOT_AN_X)
 template <>
 constexpr EnvironmentVariable::SetError
-EnvironmentVariable::convert(const int& errorNumber);
+EnvironmentVariable::convert(const int& error_number);
 #endif
 
 } /// namespace cu0
@@ -182,7 +182,7 @@ inline const std::optional<std::string>& EnvironmentVariable::sync() {
       (raw == NULL ? std::optional<std::string>{} : std::string{raw});
 }
 
-#ifndef not_an_x
+#if !defined(NOT_AN_X)
 inline std::variant<std::monostate, EnvironmentVariable::SetError>
 EnvironmentVariable::set(
     std::string value
@@ -200,7 +200,7 @@ EnvironmentVariable::set(
 }
 #endif
 
-#ifndef not_an_x
+#if !defined(NOT_AN_X)
 inline std::variant<std::monostate, EnvironmentVariable::SetError>
 EnvironmentVariable::unset() {
   if (unsetenv(this->data_.key.c_str()) == 0) {
@@ -212,12 +212,12 @@ EnvironmentVariable::unset() {
 }
 #endif
 
-#ifndef not_an_x
+#if !defined(NOT_AN_X)
 template <>
 constexpr EnvironmentVariable::SetError EnvironmentVariable::convert(
-    const int& errorNumber
+    const int& error_number
 ) {
-  return static_cast<SetError>(errorNumber);
+  return static_cast<SetError>(error_number);
 }
 #endif
 
