@@ -519,12 +519,14 @@ inline std::variant<Process, typename Process::CreateError> Process::create(
   }
   if (::pipe(out_fd) != 0) {
     const auto ret = static_cast<CreateError>(errno);
+    //! do not handle errors if any
     ::close(in_fd[0]);
     ::close(in_fd[1]);
     return ret;
   }
   if (::pipe(err_fd) != 0) {
     const auto ret = static_cast<CreateError>(errno);
+    //! do not handle errors if any
     ::close(in_fd[0]);
     ::close(in_fd[1]);
     ::close(out_fd[0]);
@@ -533,25 +535,36 @@ inline std::variant<Process, typename Process::CreateError> Process::create(
   }
   const auto pid = ::vfork();
   if (pid == 0) { //! forked process
-    ::close(in_fd[1]);
-    ::close(out_fd[0]);
-    ::close(err_fd[0]);
-    ::dup2(in_fd[0], STDIN_FILENO);
-    ::dup2(out_fd[1], STDOUT_FILENO);
-    ::dup2(err_fd[1], STDERR_FILENO);
+    {
+      //! do not handle errors if any
+      ::close(in_fd[1]);
+      ::close(out_fd[0]);
+      ::close(err_fd[0]);
+      ::dup2(in_fd[0], STDIN_FILENO);
+      ::dup2(out_fd[1], STDOUT_FILENO);
+      ::dup2(err_fd[1], STDERR_FILENO);
+      ::close(in_fd[0]);
+      ::close(out_fd[1]);
+      ::close(err_fd[1]);
+    }
+    //! `argv_raw` and `envp_raw` will be copied by `::execve`
+    const auto exec_ret = ::execve(argv_raw[0], argv_raw.get(), envp_raw.get());
+    if (exec_ret != 0) {
+      //! exec failed
+      ::_exit(errno);
+    }
+  }
+  {
+    //! do not handle errors if any
     ::close(in_fd[0]);
     ::close(out_fd[1]);
     ::close(err_fd[1]);
-    const auto exec_ret = ::execve(argv_raw[0], argv_raw.get(), envp_raw.get());
-    if (exec_ret != 0) {
-      //! fail
-      exit(errno);
-    }
   }
-  ::close(in_fd[0]);
-  ::close(out_fd[1]);
-  ::close(err_fd[1]);
   if (pid < 0) { //! fork failed
+    //! do not handle errors if any
+    ::close(in_fd[1]);
+    ::close(out_fd[0]);
+    ::close(err_fd[0]);
     return static_cast<CreateError>(errno);
   }
   auto process = Process{};
@@ -580,10 +593,11 @@ Process::create_pipeless(
   }
   const auto pid = ::vfork();
   if (pid == 0) { //! forked process
+    //! `argv_raw` and `envp_raw` will be copied by `::execve`
     const auto exec_ret = ::execve(argv_raw[0], argv_raw.get(), envp_raw.get());
     if (exec_ret != 0) {
-      //! fail
-      exit(errno);
+      //! exec failed
+      ::_exit(errno);
     }
   }
   if (pid < 0) { //! fork failed
@@ -597,6 +611,7 @@ Process::create_pipeless(
 
 inline Process::~Process() {
 #if __has_include(<unistd.h>)
+  //! do not handle errors if any
   ::close(this->stdin_pipe_);
   ::close(this->stdout_pipe_);
   ::close(this->stderr_pipe_);
