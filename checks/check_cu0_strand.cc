@@ -447,8 +447,9 @@ be checked
 #if __has_include(<stdlib.h>) && __has_include(<unistd.h>)
       const auto page_size = sysconf(_SC_PAGE_SIZE);
       assert(page_size > 0);
-      const auto min_stack_size =
-          (PTHREAD_STACK_MIN / page_size + 1) * page_size;
+      const auto min_stack_size = static_cast<
+          unsigned long
+      >(PTHREAD_STACK_MIN / page_size + 1) * page_size;
     {
       const auto allocate_stack_variant =
           strand_for_stack_size.allocate_stack<

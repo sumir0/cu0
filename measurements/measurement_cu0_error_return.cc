@@ -31,12 +31,10 @@ constexpr std::chrono::nanoseconds measure(
     Args&&... args
 ) {
   const auto start = std::chrono::high_resolution_clock::now();
-  const auto value = mock(args...);
+  const volatile auto value = mock(args...);
   const auto end = std::chrono::high_resolution_clock::now();
-  if (&value != nullptr) {
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-  }
-  return {};
+  (void)value;
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
 }
 
 int main() {

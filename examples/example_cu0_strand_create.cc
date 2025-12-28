@@ -6,5 +6,5 @@ int main() {
   if (!std::holds_alternative<cu0::Strand>(variant)) {
     std::cerr << "Error: the strand couldn't be created" << '\n';
   }
-  const auto& strand = std::get<cu0::Strand>(variant);
+  [[maybe_unused]] const auto& strand = std::get<cu0::Strand>(variant);
 }
